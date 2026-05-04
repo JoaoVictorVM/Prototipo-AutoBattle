@@ -1,5 +1,5 @@
-/* Zona livre exibida quando ainda não há nenhum slot definido e o jogador
-   selecionou uma carta de Personagem — qualquer ponto do campo é válido. */
+/* Zona livre exibida quando ainda não há nenhum slot definido. Vira
+   drop target para cartas de Personagem. */
 .grid-drop-zone {
   position: absolute;
   inset: 4px;
@@ -9,6 +9,25 @@
   pointer-events: auto;
   cursor: crosshair;
   animation: slot-pulse 1.2s ease-in-out infinite;
+  transition: opacity var(--speed-fast);
+}
+
+/* Drop zones do grid só aparecem em SETUP ou durante drag de Personagem.
+   Ficam sempre no DOM para que elementFromPoint detecte no drop. */
+body[data-phase="BATTLE"] .slot,
+body[data-phase="BATTLE"] .grid-drop-zone,
+body[data-phase="BETWEEN_WAVES"] .slot,
+body[data-phase="BETWEEN_WAVES"] .grid-drop-zone,
+body[data-phase="PAUSED_LEVEL_UP"] .slot,
+body[data-phase="PAUSED_LEVEL_UP"] .grid-drop-zone,
+body[data-phase="GAME_OVER"] .slot,
+body[data-phase="GAME_OVER"] .grid-drop-zone {
+  opacity: 0;
+}
+
+body.is-dragging[data-drag-type="character"] .slot,
+body.is-dragging[data-drag-type="character"] .grid-drop-zone {
+  opacity: 1 !important;
 }
 
 .slot {

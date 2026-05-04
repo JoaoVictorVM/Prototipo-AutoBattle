@@ -35,67 +35,85 @@ import {
   getEffectsLayer,
 } from "./ui.js";
 
-// ---- Handlers de UI ----------------------------------------------------
+// ---- Drag-and-drop -----------------------------------------------------
 
-function onSlotClick(slotId) {
-  if (state.phase === PHASE.GAME_OVER) return;
-  const card = state.selectedCardId ? getCardById(state.selectedCardId) : null;
-  if (!card || card.type !== CARD_TYPES.CHARACTER) return;
+// Validação síncrona do alvo durante o arraste (para feedback visual).
+function canCardDrop(payload, target) {
+  if (state.phase === PHASE.GAME_OVER) return false;
+  if (!payload || !target) return false;
+  const zone = target.dataset.dropZone;
+  const cardType = payload.cardType;
 
-  const slot = getSlotById(slotId);
-  if (!slot || slot.occupied) return;
+  if (cardType === CARD_TYPES.CHARACTER) {
+    if (zone === "field") return state.gridOrigin == null;
+    if (zone === "slot") {
+      const slotId = Number(target.dataset.slotId);
+      const slot = getSlotById(slotId);
+      return !!slot && !slot.occupied;
+    }
+    return false;
+  }
 
-  const unit = createPlayerUnit(slot.x, slot.y, slot.id);
-  state.units.push(unit);
-  occupySlot(slot.id, unit.id);
-  removeCardFromHand(card.id);
-  state.selectedCardId = null;
-  renderAll();
+  // Cartas de upgrade só caem em unidades aliadas (campo ou party panel).
+  if (zone === "unit") {
+    const unitId = Number(target.dataset.unitId);
+    return state.units.some((u) => u.id === unitId);
+  }
+  return false;
 }
 
-function onFieldClick(x, y) {
-  if (state.phase === PHASE.GAME_OVER) return;
-  const card = state.selectedCardId ? getCardById(state.selectedCardId) : null;
-  if (!card || card.type !== CARD_TYPES.CHARACTER) return;
-  if (state.gridOrigin) return;
+function onCardDrop({ target, zone, clientX, clientY, payload }) {
+  const card = getCardById(payload.cardId);
+  if (!card) return;
+  const cardType = card.type;
 
+  if (cardType === CARD_TYPES.CHARACTER) {
+    if (zone === "field") {
+      placeCharacterAtClient(card, clientX, clientY);
+    } else if (zone === "slot") {
+      const slotId = Number(target.dataset.slotId);
+      placeCharacterOnSlot(card, slotId);
+    }
+    return;
+  }
+
+  if (zone === "unit") {
+    const unitId = Number(target.dataset.unitId);
+    applyUpgradeCard(card, unitId);
+  }
+}
+
+function placeCharacterAtClient(card, clientX, clientY) {
+  // Calcula posição relativa ao battlefield.
+  const bf = document.getElementById("battlefield");
+  if (!bf) return;
+  const r = bf.getBoundingClientRect();
+  const x = clientX - r.left;
+  const y = clientY - r.top;
   const slot = placeFirstSlotAt(x, y);
   if (!slot) return;
+  spawnCharacterAt(card, slot);
+}
 
+function placeCharacterOnSlot(card, slotId) {
+  const slot = getSlotById(slotId);
+  if (!slot || slot.occupied) return;
+  spawnCharacterAt(card, slot);
+}
+
+function spawnCharacterAt(card, slot) {
   const unit = createPlayerUnit(slot.x, slot.y, slot.id);
   state.units.push(unit);
   occupySlot(slot.id, unit.id);
   removeCardFromHand(card.id);
-  state.selectedCardId = null;
   renderAll();
 }
 
-function onCardClick(cardId) {
-  const card = getCardById(cardId);
-  if (!card) return;
-  state.selectedCardId = state.selectedCardId === cardId ? null : cardId;
-  renderAll();
-}
-
-function onUnitClick(unitId) {
-  applyCardToUnit(unitId);
-}
-
-function onPartyMemberClick(unitId) {
-  applyCardToUnit(unitId);
-}
-
-function applyCardToUnit(unitId) {
-  const card = state.selectedCardId ? getCardById(state.selectedCardId) : null;
-  if (!card) return;
-  if (card.type === CARD_TYPES.CHARACTER) return;
-
+function applyUpgradeCard(card, unitId) {
   const unit = state.units.find((u) => u.id === unitId);
   if (!unit) return;
-
   applyUpgrade(unit, card.type);
   removeCardFromHand(card.id);
-  state.selectedCardId = null;
   renderAll();
 }
 
@@ -332,11 +350,8 @@ function restartGame() {
 
 function start() {
   initUI({
-    onSlotClick,
-    onFieldClick,
-    onCardClick,
-    onUnitClick,
-    onPartyMemberClick,
+    canCardDrop,
+    onCardDrop,
     onStartBattle,
   });
   resetState();

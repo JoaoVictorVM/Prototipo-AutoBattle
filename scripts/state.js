@@ -21,7 +21,6 @@ export const state = {
   gridOrigin: null, // {x, y} definido quando o primeiro herói é posicionado
   hand: [],
 
-  selectedCardId: null,
 
   nextUnitId: 1,
   nextEnemyId: 1,
@@ -60,7 +59,6 @@ export function resetState() {
   state.slots = [];
   state.gridOrigin = null;
   state.hand = [];
-  state.selectedCardId = null;
   state.nextUnitId = 1;
   state.nextEnemyId = 1;
   state.nextSlotId = 1;

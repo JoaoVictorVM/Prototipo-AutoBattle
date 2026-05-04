@@ -65,6 +65,33 @@
   border-width: 2px;
 }
 
+/* Drag-and-drop */
+
+.card.is-drag-source {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.card--ghost {
+  pointer-events: none;
+  z-index: 200;
+  transform: rotate(-4deg) translateY(-12px);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.6);
+  cursor: grabbing;
+}
+
+.card {
+  cursor: grab;
+}
+
+.card:active {
+  cursor: grabbing;
+}
+
+body.is-dragging * {
+  cursor: grabbing !important;
+}
+
 .card--move_speed {
   background: linear-gradient(160deg, #143a3a, #1f1f1f);
   border-color: #1ABC9C;

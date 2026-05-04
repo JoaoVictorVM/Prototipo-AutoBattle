@@ -1,5 +1,5 @@
 import { state } from "./state.js";
-import { CARD_TYPES, PHASE } from "./constants.js";
+import { PHASE } from "./constants.js";
 import { totalUpgrades, upgradeSummary } from "./units.js";
 import {
   flashDamage,
@@ -7,6 +7,7 @@ import {
   playDeath,
   spawnFloatingText,
 } from "./effects.js";
+import { enableDrag } from "./drag.js";
 
 const dom = {
   hudWave: null,
@@ -27,11 +28,8 @@ const dom = {
 };
 
 const handlers = {
-  onSlotClick: null,
-  onFieldClick: null,
-  onCardClick: null,
-  onUnitClick: null,
-  onPartyMemberClick: null,
+  canCardDrop: null,
+  onCardDrop: null,
   onStartBattle: null,
 };
 
@@ -85,6 +83,7 @@ export function renderHUD() {
   dom.hudWave.textContent = state.wave;
   dom.hudScore.textContent = state.score;
   dom.hudStatus.textContent = phaseLabel();
+  document.body.dataset.phase = state.phase;
 }
 
 function phaseLabel() {
@@ -118,22 +117,15 @@ export function renderGrid() {
   dom.gridLayer.innerHTML = "";
   if (state.phase === PHASE.GAME_OVER) return;
 
-  const picking = isPickingCharacterSlot();
-  // Mostra slots no SETUP (sempre) ou em qualquer fase quando o jogador
-  // tem uma carta de Personagem selecionada (ex: vinda de level up).
-  const showSlots = state.phase === PHASE.SETUP || picking;
-  if (!showSlots) return;
+  // Slots/drop-zone ficam disponíveis em qualquer fase (exceto game over)
+  // — o sistema de drag valida se a carta arrastada é de Personagem.
 
   // Sem origem definida ainda? Drop zone livre cobrindo o campo.
-  if (state.gridOrigin == null && picking) {
+  // Ela vira um drop target compatível com cartas de Personagem.
+  if (state.gridOrigin == null) {
     const drop = document.createElement("div");
     drop.className = "grid-drop-zone";
-    drop.addEventListener("click", (ev) => {
-      const rect = dom.battlefield.getBoundingClientRect();
-      const x = ev.clientX - rect.left;
-      const y = ev.clientY - rect.top;
-      handlers.onFieldClick?.(x, y);
-    });
+    drop.dataset.dropZone = "field";
     dom.gridLayer.appendChild(drop);
     return;
   }
@@ -141,21 +133,16 @@ export function renderGrid() {
   for (const slot of state.slots) {
     if (slot.occupied) continue;
     const el = document.createElement("div");
-    el.className = "slot";
-    if (isPickingCharacterSlot()) el.classList.add("slot--highlighted");
+    el.className = "slot slot--highlighted";
     el.style.left = `${slot.x}px`;
     el.style.top = `${slot.y}px`;
     el.dataset.slotId = String(slot.id);
-    el.addEventListener("click", () => handlers.onSlotClick?.(slot.id));
+    el.dataset.dropZone = "slot";
     dom.gridLayer.appendChild(el);
   }
 }
 
-function isPickingCharacterSlot() {
-  if (!state.selectedCardId) return false;
-  const card = state.hand.find((c) => c.id === state.selectedCardId);
-  return card?.type === CARD_TYPES.CHARACTER;
-}
+// (removido) isPickingCharacterSlot — não usamos mais seleção por clique.
 
 // Atualização leve por frame: posições e barras de HP. Não recria DOM.
 export function syncUnitsFrame() {
@@ -222,10 +209,7 @@ export function renderUnits() {
       hpBar.appendChild(hpFill);
       el.appendChild(hpBar);
       el.dataset.unitId = String(u.id);
-      el.addEventListener("click", (ev) => {
-        ev.stopPropagation();
-        handlers.onUnitClick?.(u.id);
-      });
+      el.dataset.dropZone = "unit";
       dom.unitsLayer.appendChild(el);
       u.el = el;
       u._hpFill = hpFill;
@@ -264,11 +248,6 @@ function syncUnitVisual(u) {
     if (u.specials && u.specials.length > 0) {
       u.el.style.backgroundColor = blendSpecialColors(u.specials);
     }
-    const targetable =
-      state.selectedCardId &&
-      state.hand.find((c) => c.id === state.selectedCardId)?.type !==
-        CARD_TYPES.CHARACTER;
-    u.el.classList.toggle("is-targetable", !!targetable);
   }
   if (u._hpFill) {
     const pct = Math.max(0, Math.min(1, u.hp / u.maxHp));
@@ -364,7 +343,8 @@ export function renderParty() {
 
     card.appendChild(info);
 
-    card.addEventListener("click", () => handlers.onPartyMemberClick?.(u.id));
+    card.dataset.unitId = String(u.id);
+    card.dataset.dropZone = "unit";
     dom.partyList.appendChild(card);
   }
 }
@@ -381,7 +361,7 @@ export function renderHand() {
   for (const card of state.hand) {
     const el = document.createElement("div");
     el.className = `card card--${card.type}`;
-    if (card.id === state.selectedCardId) el.classList.add("card--selected");
+    el.dataset.cardId = String(card.id);
 
     const typeLabel = document.createElement("div");
     typeLabel.className = "card__type";
@@ -398,7 +378,13 @@ export function renderHand() {
     desc.textContent = card.desc;
     el.appendChild(desc);
 
-    el.addEventListener("click", () => handlers.onCardClick?.(card.id));
+    enableDrag(el, {
+      payload: { cardId: card.id, cardType: card.type },
+      canDrop: (target, payload) =>
+        handlers.canCardDrop?.(payload, target) ?? false,
+      onDrop: (info) => handlers.onCardDrop?.(info),
+    });
+
     dom.handList.appendChild(el);
   }
 }

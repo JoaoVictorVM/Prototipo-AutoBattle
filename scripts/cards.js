@@ -52,7 +52,6 @@ export function drawInitialHand() {
 
 export function removeCardFromHand(cardId) {
   state.hand = state.hand.filter((c) => c.id !== cardId);
-  if (state.selectedCardId === cardId) state.selectedCardId = null;
 }
 
 export function getCardById(cardId) {
