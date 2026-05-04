@@ -3,13 +3,12 @@ import { state, nextId } from "./state.js";
 
 let heroCounter = 0;
 
-export function createPlayerUnit(x, y, slotId) {
+export function createPlayerUnit(x, y) {
   heroCounter += 1;
   const unit = {
     id: nextId("nextUnitId"),
     kind: "ally",
     name: `Herói ${heroCounter}`,
-    slotId,
     x,
     y,
     hp: PLAYER_UNIT.HP,

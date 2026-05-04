@@ -127,7 +127,7 @@ export const CARD_INFO = {
   [CARD_TYPES.CHARACTER]: {
     title: "Novo Herói",
     typeLabel: "Personagem",
-    desc: "Coloca um novo aliado em um slot do campo.",
+    desc: "Coloca um novo aliado em qualquer ponto do campo.",
   },
   [CARD_TYPES.HP]: {
     title: "+Vida",

@@ -35,7 +35,6 @@
   overflow: hidden;
 }
 
-.grid-layer,
 .units-layer,
 .effects-layer {
   position: absolute;
@@ -43,9 +42,9 @@
   pointer-events: none;
 }
 
-/* Apenas os elementos interativos das camadas recebem clique;
-   o restante deixa o evento atravessar até a camada de baixo. */
-.grid-layer .slot,
+/* Apenas os elementos interativos das camadas recebem clique/drop;
+   o restante deixa o evento atravessar até o battlefield, que é o
+   drop target livre para cartas de Personagem. */
 .units-layer .unit {
   pointer-events: auto;
 }

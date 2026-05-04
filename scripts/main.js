@@ -1,12 +1,5 @@
 import { state, resetState } from "./state.js";
 import { CARD_TYPES, PHASE, GAME, UNIT_XP } from "./constants.js";
-import {
-  initGrid,
-  getSlotById,
-  occupySlot,
-  freeSlotByUnit,
-  placeFirstSlotAt,
-} from "./grid.js";
 import { createPlayerUnit, applyUpgrade, applySpecial } from "./units.js";
 import {
   drawInitialHand,
@@ -45,13 +38,7 @@ function canCardDrop(payload, target) {
   const cardType = payload.cardType;
 
   if (cardType === CARD_TYPES.CHARACTER) {
-    if (zone === "field") return state.gridOrigin == null;
-    if (zone === "slot") {
-      const slotId = Number(target.dataset.slotId);
-      const slot = getSlotById(slotId);
-      return !!slot && !slot.occupied;
-    }
-    return false;
+    return zone === "field";
   }
 
   // Cartas de upgrade só caem em unidades aliadas (campo ou party panel).
@@ -62,17 +49,13 @@ function canCardDrop(payload, target) {
   return false;
 }
 
-function onCardDrop({ target, zone, clientX, clientY, payload }) {
+function onCardDrop({ zone, clientX, clientY, payload, target }) {
   const card = getCardById(payload.cardId);
   if (!card) return;
-  const cardType = card.type;
 
-  if (cardType === CARD_TYPES.CHARACTER) {
+  if (card.type === CARD_TYPES.CHARACTER) {
     if (zone === "field") {
-      placeCharacterAtClient(card, clientX, clientY);
-    } else if (zone === "slot") {
-      const slotId = Number(target.dataset.slotId);
-      placeCharacterOnSlot(card, slotId);
+      spawnCharacterAtClient(card, clientX, clientY);
     }
     return;
   }
@@ -83,28 +66,16 @@ function onCardDrop({ target, zone, clientX, clientY, payload }) {
   }
 }
 
-function placeCharacterAtClient(card, clientX, clientY) {
-  // Calcula posição relativa ao battlefield.
+function spawnCharacterAtClient(card, clientX, clientY) {
   const bf = document.getElementById("battlefield");
   if (!bf) return;
   const r = bf.getBoundingClientRect();
-  const x = clientX - r.left;
-  const y = clientY - r.top;
-  const slot = placeFirstSlotAt(x, y);
-  if (!slot) return;
-  spawnCharacterAt(card, slot);
-}
+  const margin = 16;
+  const x = Math.max(margin, Math.min(state.field.width - margin, clientX - r.left));
+  const y = Math.max(margin, Math.min(state.field.height - margin, clientY - r.top));
 
-function placeCharacterOnSlot(card, slotId) {
-  const slot = getSlotById(slotId);
-  if (!slot || slot.occupied) return;
-  spawnCharacterAt(card, slot);
-}
-
-function spawnCharacterAt(card, slot) {
-  const unit = createPlayerUnit(slot.x, slot.y, slot.id);
+  const unit = createPlayerUnit(x, y);
   state.units.push(unit);
-  occupySlot(slot.id, unit.id);
   removeCardFromHand(card.id);
   renderAll();
 }
@@ -125,7 +96,7 @@ function onStartBattle() {
   renderAll();
 }
 
-// ---- Eventos pós-combate (XP, score, slots livres) ---------------------
+// ---- Eventos pós-combate (XP, score) -----------------------------------
 
 function handlePostTickEvents() {
   let scoreDelta = 0;
@@ -150,8 +121,6 @@ function handlePostTickEvents() {
           "xp"
         );
       }
-    } else if (u.kind === "ally") {
-      freeSlotByUnit(u.id);
     }
   }
 
@@ -341,7 +310,6 @@ function maybeShowGameOver() {
 function restartGame() {
   resetState();
   clearGameDOM();
-  initGrid();
   drawInitialHand();
   renderAll();
 }
@@ -355,7 +323,6 @@ function start() {
     onStartBattle,
   });
   resetState();
-  initGrid();
   drawInitialHand();
   renderAll();
 

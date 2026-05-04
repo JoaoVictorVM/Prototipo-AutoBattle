@@ -16,15 +16,10 @@ export const state = {
 
   units: [],
   enemies: [],
-
-  slots: [],
-  gridOrigin: null, // {x, y} definido quando o primeiro herói é posicionado
   hand: [],
-
 
   nextUnitId: 1,
   nextEnemyId: 1,
-  nextSlotId: 1,
   nextCardId: 1,
 
   field: {
@@ -56,12 +51,9 @@ export function resetState() {
   state.player.xpNeeded = 100;
   state.units = [];
   state.enemies = [];
-  state.slots = [];
-  state.gridOrigin = null;
   state.hand = [];
   state.nextUnitId = 1;
   state.nextEnemyId = 1;
-  state.nextSlotId = 1;
   state.nextCardId = 1;
   state.pendingWaveTimer = 0;
   state.pendingEvents = [];

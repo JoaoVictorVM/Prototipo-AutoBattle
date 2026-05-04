@@ -14,7 +14,6 @@ const dom = {
   hudScore: null,
   hudStatus: null,
   battlefield: null,
-  gridLayer: null,
   unitsLayer: null,
   effectsLayer: null,
   startBtn: null,
@@ -40,7 +39,6 @@ export function initUI(callbacks) {
   dom.hudScore = document.getElementById("hud-score");
   dom.hudStatus = document.getElementById("hud-status");
   dom.battlefield = document.getElementById("battlefield");
-  dom.gridLayer = document.getElementById("grid-layer");
   dom.unitsLayer = document.getElementById("units-layer");
   dom.effectsLayer = document.getElementById("effects-layer");
   dom.startBtn = document.getElementById("start-battle-btn");
@@ -71,7 +69,6 @@ export function getEffectsLayer() {
 
 export function renderAll() {
   renderHUD();
-  renderGrid();
   renderUnits();
   renderXPBar();
   renderParty();
@@ -113,36 +110,9 @@ export function renderStartButton() {
     state.phase === PHASE.SETUP ? "inline-block" : "none";
 }
 
-export function renderGrid() {
-  dom.gridLayer.innerHTML = "";
-  if (state.phase === PHASE.GAME_OVER) return;
-
-  // Slots/drop-zone ficam disponíveis em qualquer fase (exceto game over)
-  // — o sistema de drag valida se a carta arrastada é de Personagem.
-
-  // Sem origem definida ainda? Drop zone livre cobrindo o campo.
-  // Ela vira um drop target compatível com cartas de Personagem.
-  if (state.gridOrigin == null) {
-    const drop = document.createElement("div");
-    drop.className = "grid-drop-zone";
-    drop.dataset.dropZone = "field";
-    dom.gridLayer.appendChild(drop);
-    return;
-  }
-
-  for (const slot of state.slots) {
-    if (slot.occupied) continue;
-    const el = document.createElement("div");
-    el.className = "slot slot--highlighted";
-    el.style.left = `${slot.x}px`;
-    el.style.top = `${slot.y}px`;
-    el.dataset.slotId = String(slot.id);
-    el.dataset.dropZone = "slot";
-    dom.gridLayer.appendChild(el);
-  }
-}
-
-// (removido) isPickingCharacterSlot — não usamos mais seleção por clique.
+// (removido) renderGrid — slots foram aposentados. O <div id="battlefield">
+// já carrega data-drop-zone="field" no HTML, então qualquer ponto do
+// campo é alvo válido para cartas de Personagem.
 
 // Atualização leve por frame: posições e barras de HP. Não recria DOM.
 export function syncUnitsFrame() {
@@ -501,6 +471,5 @@ export function renderGameOverModal({ wave, kills, score }, onRestart) {
 export function clearGameDOM() {
   if (dom.unitsLayer) dom.unitsLayer.innerHTML = "";
   if (dom.effectsLayer) dom.effectsLayer.innerHTML = "";
-  if (dom.gridLayer) dom.gridLayer.innerHTML = "";
   closeModal();
 }
