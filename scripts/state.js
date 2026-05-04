@@ -18,6 +18,7 @@ export const state = {
   enemies: [],
 
   slots: [],
+  gridOrigin: null, // {x, y} definido quando o primeiro herói é posicionado
   hand: [],
 
   selectedCardId: null,
@@ -33,6 +34,9 @@ export const state = {
   },
 
   pendingWaveTimer: 0,
+
+  // Eventos consumidos pela UI (combat.js empurra, ui.js consome e limpa).
+  pendingEvents: [],
 };
 
 export function resetState() {
@@ -47,6 +51,7 @@ export function resetState() {
   state.units = [];
   state.enemies = [];
   state.slots = [];
+  state.gridOrigin = null;
   state.hand = [];
   state.selectedCardId = null;
   state.nextUnitId = 1;
@@ -54,6 +59,7 @@ export function resetState() {
   state.nextSlotId = 1;
   state.nextCardId = 1;
   state.pendingWaveTimer = 0;
+  state.pendingEvents = [];
 }
 
 export function nextId(key) {

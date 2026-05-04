@@ -1,3 +1,16 @@
+/* Zona livre exibida quando ainda não há nenhum slot definido e o jogador
+   selecionou uma carta de Personagem — qualquer ponto do campo é válido. */
+.grid-drop-zone {
+  position: absolute;
+  inset: 4px;
+  border: 2px dashed rgba(72, 199, 116, 0.45);
+  background: rgba(72, 199, 116, 0.06);
+  border-radius: 4px;
+  pointer-events: auto;
+  cursor: crosshair;
+  animation: slot-pulse 1.2s ease-in-out infinite;
+}
+
 .slot {
   position: absolute;
   width: var(--slot-size);

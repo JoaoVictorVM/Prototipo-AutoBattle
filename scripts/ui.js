@@ -1,6 +1,12 @@
 import { state } from "./state.js";
 import { CARD_TYPES, PHASE } from "./constants.js";
 import { totalUpgrades, upgradeSummary } from "./units.js";
+import {
+  flashDamage,
+  playAttackPunch,
+  playDeath,
+  spawnFloatingText,
+} from "./effects.js";
 
 const dom = {
   hudWave: null,
@@ -22,6 +28,7 @@ const dom = {
 
 const handlers = {
   onSlotClick: null,
+  onFieldClick: null,
   onCardClick: null,
   onUnitClick: null,
   onPartyMemberClick: null,
@@ -90,10 +97,23 @@ export function renderStartButton() {
 
 export function renderGrid() {
   dom.gridLayer.innerHTML = "";
-  const showSlots =
-    state.phase === PHASE.SETUP || isPickingCharacterSlot();
+  if (state.phase !== PHASE.SETUP) return;
 
-  if (!showSlots) return;
+  // Sem origem definida ainda? Se o jogador estiver selecionando uma carta
+  // de Personagem, exibimos uma zona-livre que aceita o clique em qualquer
+  // ponto do campo para definir o primeiro slot.
+  if (state.gridOrigin == null && isPickingCharacterSlot()) {
+    const drop = document.createElement("div");
+    drop.className = "grid-drop-zone";
+    drop.addEventListener("click", (ev) => {
+      const rect = dom.battlefield.getBoundingClientRect();
+      const x = ev.clientX - rect.left;
+      const y = ev.clientY - rect.top;
+      handlers.onFieldClick?.(x, y);
+    });
+    dom.gridLayer.appendChild(drop);
+    return;
+  }
 
   for (const slot of state.slots) {
     if (slot.occupied) continue;
@@ -112,6 +132,65 @@ function isPickingCharacterSlot() {
   if (!state.selectedCardId) return false;
   const card = state.hand.find((c) => c.id === state.selectedCardId);
   return card?.type === CARD_TYPES.CHARACTER;
+}
+
+// Atualização leve por frame: posições e barras de HP. Não recria DOM.
+export function syncUnitsFrame() {
+  for (const u of state.units) {
+    if (!u.el) continue;
+    u.el.style.left = `${u.x}px`;
+    u.el.style.top = `${u.y}px`;
+    if (u._hpFill) {
+      const pct = Math.max(0, Math.min(1, u.hp / u.maxHp));
+      u._hpFill.style.width = `${pct * 100}%`;
+    }
+  }
+  for (const e of state.enemies) {
+    if (!e.el) continue;
+    e.el.style.left = `${e.x}px`;
+    e.el.style.top = `${e.y}px`;
+    if (e._hpFill) {
+      const pct = Math.max(0, Math.min(1, e.hp / e.maxHp));
+      e._hpFill.style.width = `${pct * 100}%`;
+    }
+  }
+}
+
+// Consome eventos do combate (flash de dano, punch, morte, floating text).
+export function processCombatEvents() {
+  if (state.pendingEvents.length === 0) return;
+  const events = state.pendingEvents;
+  state.pendingEvents = [];
+
+  for (const ev of events) {
+    if (ev.type === "attack") {
+      const { attacker, target, damage } = ev;
+      if (attacker.el) {
+        playAttackPunch(
+          attacker.el,
+          target.x - attacker.x,
+          target.y - attacker.y
+        );
+      }
+      if (target.el) flashDamage(target.el);
+      void damage;
+    } else if (ev.type === "death") {
+      const { unit } = ev;
+      if (unit.kind === "enemy" && dom.effectsLayer) {
+        spawnFloatingText(
+          dom.effectsLayer,
+          unit.x,
+          unit.y - unit.size / 2,
+          "+10 XP",
+          "xp"
+        );
+      }
+      playDeath(unit.el, () => {
+        unit.el = null;
+        unit._hpFill = null;
+      });
+    }
+  }
 }
 
 export function renderUnits() {
