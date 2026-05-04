@@ -104,6 +104,7 @@ export const EFFECTS = {
   RANGED_RANGE: 150,
   VAMPIRE_RATIO: 0.3,
   DOUBLE_ATK_DELAY: 200,
+  SPEED_SPECIAL_BONUS: 25,
 };
 
 export const CARD_POOL = {

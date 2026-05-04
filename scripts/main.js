@@ -1,5 +1,5 @@
 import { state, resetState } from "./state.js";
-import { CARD_TYPES, PHASE, GAME } from "./constants.js";
+import { CARD_TYPES, PHASE, GAME, UNIT_XP } from "./constants.js";
 import {
   initGrid,
   getSlotById,
@@ -7,10 +7,19 @@ import {
   freeSlotByUnit,
   placeFirstSlotAt,
 } from "./grid.js";
-import { createPlayerUnit, applyUpgrade } from "./units.js";
-import { drawInitialHand, getCardById, removeCardFromHand } from "./cards.js";
+import { createPlayerUnit, applyUpgrade, applySpecial } from "./units.js";
+import {
+  drawInitialHand,
+  getCardById,
+  removeCardFromHand,
+  rollLevelUpCards,
+  rollUnitLevelUpOptions,
+} from "./cards.js";
 import { spawnWave } from "./waves.js";
 import { combatTick } from "./combat.js";
+import { addPlayerXP, xpForKill, xpForWaveComplete } from "./xp.js";
+import { addUnitXP } from "./unit-xp.js";
+import { spawnLevelUpText } from "./effects.js";
 import {
   initUI,
   renderAll,
@@ -19,12 +28,15 @@ import {
   renderHUD,
   renderParty,
   renderXPBar,
+  renderModal,
+  closeModal,
+  getEffectsLayer,
 } from "./ui.js";
 
 // ---- Handlers de UI ----------------------------------------------------
 
 function onSlotClick(slotId) {
-  if (state.phase !== PHASE.SETUP) return;
+  if (state.phase === PHASE.GAME_OVER) return;
   const card = state.selectedCardId ? getCardById(state.selectedCardId) : null;
   if (!card || card.type !== CARD_TYPES.CHARACTER) return;
 
@@ -40,10 +52,10 @@ function onSlotClick(slotId) {
 }
 
 function onFieldClick(x, y) {
-  if (state.phase !== PHASE.SETUP) return;
+  if (state.phase === PHASE.GAME_OVER) return;
   const card = state.selectedCardId ? getCardById(state.selectedCardId) : null;
   if (!card || card.type !== CARD_TYPES.CHARACTER) return;
-  if (state.gridOrigin) return; // só ativo quando ainda não há origem
+  if (state.gridOrigin) return;
 
   const slot = placeFirstSlotAt(x, y);
   if (!slot) return;
@@ -93,11 +105,12 @@ function onStartBattle() {
   renderAll();
 }
 
-// ---- Processamento de eventos pós-combate ------------------------------
+// ---- Eventos pós-combate (XP, score, slots livres) ---------------------
 
 function handlePostTickEvents() {
   let scoreDelta = 0;
   let killDelta = 0;
+  let xpDelta = 0;
 
   for (const ev of state.pendingEvents) {
     if (ev.type !== "death") continue;
@@ -105,6 +118,7 @@ function handlePostTickEvents() {
     if (u.kind === "enemy") {
       scoreDelta += 10;
       killDelta += 1;
+      xpDelta += xpForKill(state.wave);
     } else if (u.kind === "ally") {
       freeSlotByUnit(u.id);
     }
@@ -113,6 +127,115 @@ function handlePostTickEvents() {
   if (scoreDelta || killDelta) {
     state.score += scoreDelta;
     state.enemiesKilled += killDelta;
+  }
+  if (xpDelta > 0) {
+    awardPlayerXP(xpDelta);
+  }
+}
+
+// ---- Level up flow -----------------------------------------------------
+
+function awardPlayerXP(amount) {
+  const levels = addPlayerXP(amount);
+  for (let i = 0; i < levels; i++) {
+    state.pendingLevelUps.push({ kind: "player" });
+  }
+}
+
+function checkUnitLevelUps() {
+  // combat.js já incrementou unit.xp; aqui só consumimos os thresholds.
+  for (const u of state.units) {
+    const levels = addUnitXP(u, 0);
+    for (let i = 0; i < levels; i++) {
+      state.pendingLevelUps.push({ kind: "unit", unitId: u.id });
+      const layer = getEffectsLayer();
+      if (layer) spawnLevelUpText(layer, u.x, u.y - u.size);
+    }
+  }
+  void UNIT_XP;
+}
+
+function maybeStartLevelUpFlow() {
+  if (state.pendingLevelUps.length === 0) return;
+  if (state.phase === PHASE.PAUSED_LEVEL_UP) return;
+  state.resumePhase = state.phase;
+  state.phase = PHASE.PAUSED_LEVEL_UP;
+  showNextLevelUp();
+}
+
+function showNextLevelUp() {
+  if (state.pendingLevelUps.length === 0) {
+    state.phase = state.resumePhase || PHASE.BATTLE;
+    state.resumePhase = null;
+    closeModal();
+    renderAll();
+    return;
+  }
+  const next = state.pendingLevelUps.shift();
+  if (next.kind === "player") {
+    showPlayerLevelUpModal();
+  } else {
+    showUnitLevelUpModal(next.unitId);
+  }
+}
+
+// Garante que o ciclo apply→render→nextModal não fique parado se algo
+// dentro do apply ou do render lançar uma exceção. Também previne
+// double-click consumindo dois itens da fila com um único pick.
+function safePickHandler(applyFn) {
+  let consumed = false;
+  return (option) => {
+    if (consumed) return;
+    consumed = true;
+    closeModal(); // feedback imediato; o próximo modal substitui se houver
+    try {
+      applyFn(option);
+    } catch (err) {
+      console.error("[level-up] erro ao aplicar escolha:", err);
+    }
+    try {
+      renderAll();
+    } catch (err) {
+      console.error("[level-up] erro ao re-renderizar:", err);
+    }
+    showNextLevelUp();
+  };
+}
+
+function showPlayerLevelUpModal() {
+  const cards = rollLevelUpCards(3);
+  renderModal({
+    title: `Nível ${state.player.level}!`,
+    subtitle: "Escolha uma carta",
+    cards,
+    onPick: safePickHandler((card) => {
+      state.hand.push(card);
+    }),
+  });
+}
+
+function showUnitLevelUpModal(unitId) {
+  const unit = state.units.find((u) => u.id === unitId);
+  if (!unit) {
+    showNextLevelUp();
+    return;
+  }
+  const options = rollUnitLevelUpOptions(unit, 3);
+  renderModal({
+    title: `${unit.name} — Lv.${unit.level}`,
+    subtitle: "Escolha um upgrade",
+    cards: options,
+    onPick: safePickHandler((option) => {
+      applyUnitLevelUpOption(unit, option);
+    }),
+  });
+}
+
+function applyUnitLevelUpOption(unit, option) {
+  if (option.kind === "special") {
+    applySpecial(unit, option.special);
+  } else {
+    applyUpgrade(unit, option.type);
   }
 }
 
@@ -124,33 +247,46 @@ function frame(now) {
   const dt = Math.min(0.05, (now - lastFrame) / 1000);
   lastFrame = now;
 
-  if (state.phase === PHASE.BATTLE && !state.isPaused) {
+  if (state.phase === PHASE.BATTLE) {
+    const prevPhase = state.phase;
     combatTick(dt);
     handlePostTickEvents();
+    checkUnitLevelUps();
+
+    // Bônus de XP se a wave foi concluída neste tick.
+    if (prevPhase === PHASE.BATTLE && state.phase === PHASE.BETWEEN_WAVES) {
+      awardPlayerXP(xpForWaveComplete(state.wave));
+    }
+
     processCombatEvents();
     syncUnitsFrame();
 
-    // Atualiza HUD/party/xp leve a cada frame de batalha
-    // (são re-renderizações baratas do estado).
     renderHUD();
     renderParty();
     renderXPBar();
 
+    maybeStartLevelUpFlow();
+
     if (state.phase === PHASE.GAME_OVER) {
       renderAll();
-    } else if (state.phase === PHASE.BETWEEN_WAVES) {
-      renderAll();
     }
-  } else if (state.phase === PHASE.BETWEEN_WAVES && !state.isPaused) {
+  } else if (state.phase === PHASE.BETWEEN_WAVES) {
     state.pendingWaveTimer -= dt;
     processCombatEvents();
     syncUnitsFrame();
+    renderHUD();
+    renderXPBar();
     if (state.pendingWaveTimer <= 0) {
       state.wave += 1;
       spawnWave(state.wave);
       state.phase = PHASE.BATTLE;
       renderAll();
     }
+  } else if (state.phase === PHASE.PAUSED_LEVEL_UP) {
+    // Pausa total — modal fica visível, só processamos animações
+    // residuais para nada ficar travado no meio.
+    processCombatEvents();
+    syncUnitsFrame();
   }
 
   requestAnimationFrame(frame);

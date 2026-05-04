@@ -37,6 +37,11 @@ export const state = {
 
   // Eventos consumidos pela UI (combat.js empurra, ui.js consome e limpa).
   pendingEvents: [],
+
+  // Fila de level ups pendentes (jogador e personagens). Cada entrada:
+  // { kind: 'player' } | { kind: 'unit', unitId: number }
+  pendingLevelUps: [],
+  resumePhase: null,
 };
 
 export function resetState() {
@@ -60,6 +65,8 @@ export function resetState() {
   state.nextCardId = 1;
   state.pendingWaveTimer = 0;
   state.pendingEvents = [];
+  state.pendingLevelUps = [];
+  state.resumePhase = null;
 }
 
 export function nextId(key) {

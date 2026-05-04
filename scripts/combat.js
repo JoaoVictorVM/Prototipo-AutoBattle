@@ -2,19 +2,23 @@
 // eventos para state.pendingEvents para que ui.js os consuma.
 
 import { state } from "./state.js";
-import { PHASE, EFFECTS, GAME, XP as XP_C } from "./constants.js";
+import { PHASE, EFFECTS, GAME, SPECIALS } from "./constants.js";
+import { hasSpecial } from "./units.js";
 
 export function combatTick(dt) {
   if (state.phase !== PHASE.BATTLE) return;
 
-  for (const u of state.units) u.attackCooldown = Math.max(0, u.attackCooldown - dt);
-  for (const e of state.enemies) e.attackCooldown = Math.max(0, e.attackCooldown - dt);
+  for (const u of state.units) {
+    u.attackCooldown = Math.max(0, u.attackCooldown - dt);
+    tickDoubleAttack(u, dt);
+  }
+  for (const e of state.enemies)
+    e.attackCooldown = Math.max(0, e.attackCooldown - dt);
 
   for (const u of state.units) {
     if (u.isDead) continue;
     aiAlly(u, dt);
   }
-
   for (const e of state.enemies) {
     if (e.isDead) continue;
     aiEnemy(e, dt);
@@ -23,7 +27,6 @@ export function combatTick(dt) {
   resolveCollisions();
   removeDead();
 
-  // Transições de fase
   if (state.units.length === 0) {
     state.phase = PHASE.GAME_OVER;
     return;
@@ -32,7 +35,6 @@ export function combatTick(dt) {
     state.phase = PHASE.BETWEEN_WAVES;
     state.pendingWaveTimer = GAME.WAVE_PAUSE_MS / 1000;
   }
-  void XP_C;
 }
 
 function dist(a, b) {
@@ -152,8 +154,68 @@ function aiEnemy(e, dt) {
   }
 }
 
-function doAttack(attacker, target) {
+function tickDoubleAttack(u, dt) {
+  if (!u.doubleAttackPending) return;
+  u.doubleAttackTimer -= dt;
+  if (u.doubleAttackTimer > 0) return;
+
+  u.doubleAttackPending = false;
+  let target = state.enemies.find(
+    (e) => e.id === u.doubleAttackTargetId && !e.isDead
+  );
+  if (!target) target = nearestEnemy(u);
+  if (!target) return;
+  doAttack(u, target, /* isFollowUp */ true);
+}
+
+function doAttack(attacker, target, isFollowUp = false) {
   const damage = attacker.atk;
+  applyDamage(attacker, target, damage);
+
+  // XP individual: aliados ganham XP igual ao dano que causaram.
+  if (attacker.kind === "ally") {
+    attacker.xp += damage;
+  }
+
+  // Splash (apenas aliados com Splash, ataque corpo a corpo no alvo).
+  if (
+    attacker.kind === "ally" &&
+    hasSpecial(attacker, SPECIALS.SPLASH.key)
+  ) {
+    for (const e of state.enemies) {
+      if (e === target || e.isDead) continue;
+      if (
+        Math.hypot(e.x - target.x, e.y - target.y) <= EFFECTS.SPLASH_RADIUS
+      ) {
+        applyDamage(attacker, e, damage);
+        attacker.xp += damage;
+      }
+    }
+  }
+
+  // Vampirismo
+  if (
+    attacker.kind === "ally" &&
+    hasSpecial(attacker, SPECIALS.VAMPIRE.key)
+  ) {
+    const heal = damage * EFFECTS.VAMPIRE_RATIO;
+    attacker.hp = Math.min(attacker.maxHp, attacker.hp + heal);
+  }
+
+  // Ataque Duplo: agenda um segundo ataque (não recursivo).
+  if (
+    !isFollowUp &&
+    attacker.kind === "ally" &&
+    hasSpecial(attacker, SPECIALS.DOUBLE.key)
+  ) {
+    attacker.doubleAttackPending = true;
+    attacker.doubleAttackTimer = EFFECTS.DOUBLE_ATK_DELAY / 1000;
+    attacker.doubleAttackTargetId = target.id;
+  }
+}
+
+function applyDamage(attacker, target, damage) {
+  if (target.isDead) return;
   target.hp -= damage;
 
   state.pendingEvents.push({
@@ -170,9 +232,6 @@ function doAttack(attacker, target) {
   }
 }
 
-// Soft-push: empurra suavemente quaisquer duas unidades que estejam se
-// sobrepondo, dividindo a correção igualmente entre as duas. Aplica-se
-// entre aliados, entre inimigos e mistos.
 function resolveCollisions() {
   const all = [];
   for (const u of state.units) if (!u.isDead) all.push(u);
@@ -191,7 +250,6 @@ function resolveCollisions() {
 
       let nx, ny;
       if (d < 0.0001) {
-        // Sobreposição perfeita — escolhe um eixo arbitrário pra desempate.
         nx = 1;
         ny = 0;
       } else {

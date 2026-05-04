@@ -97,12 +97,16 @@ export function renderStartButton() {
 
 export function renderGrid() {
   dom.gridLayer.innerHTML = "";
-  if (state.phase !== PHASE.SETUP) return;
+  if (state.phase === PHASE.GAME_OVER) return;
 
-  // Sem origem definida ainda? Se o jogador estiver selecionando uma carta
-  // de Personagem, exibimos uma zona-livre que aceita o clique em qualquer
-  // ponto do campo para definir o primeiro slot.
-  if (state.gridOrigin == null && isPickingCharacterSlot()) {
+  const picking = isPickingCharacterSlot();
+  // Mostra slots no SETUP (sempre) ou em qualquer fase quando o jogador
+  // tem uma carta de Personagem selecionada (ex: vinda de level up).
+  const showSlots = state.phase === PHASE.SETUP || picking;
+  if (!showSlots) return;
+
+  // Sem origem definida ainda? Drop zone livre cobrindo o campo.
+  if (state.gridOrigin == null && picking) {
     const drop = document.createElement("div");
     drop.className = "grid-drop-zone";
     drop.addEventListener("click", (ev) => {
@@ -261,8 +265,16 @@ function syncUnitVisual(u) {
 }
 
 function blendSpecialColors(specials) {
-  if (specials.length === 1) return specials[0].color;
-  const rgbs = specials.map(hexToRgb);
+  if (!specials || specials.length === 0) return "var(--color-ally)";
+  if (specials.length === 1) {
+    return specials[0]?.color || "var(--color-ally)";
+  }
+  const rgbs = specials.map((s) => hexToRgb(s?.color)).filter(Boolean);
+  if (rgbs.length === 0) return "var(--color-ally)";
+  if (rgbs.length === 1) {
+    const c = rgbs[0];
+    return `rgb(${c.r}, ${c.g}, ${c.b})`;
+  }
   const avg = rgbs.reduce(
     (acc, c) => ({ r: acc.r + c.r, g: acc.g + c.g, b: acc.b + c.b }),
     { r: 0, g: 0, b: 0 }
@@ -274,12 +286,14 @@ function blendSpecialColors(specials) {
 }
 
 function hexToRgb(hex) {
+  if (typeof hex !== "string") return null;
   const h = hex.replace("#", "");
-  return {
-    r: parseInt(h.substring(0, 2), 16),
-    g: parseInt(h.substring(2, 4), 16),
-    b: parseInt(h.substring(4, 6), 16),
-  };
+  if (h.length < 6) return null;
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return null;
+  return { r, g, b };
 }
 
 export function renderXPBar() {
@@ -402,6 +416,12 @@ export function renderModal({ title, subtitle, cards, onPick, footer }) {
     cards.forEach((card, idx) => {
       const el = document.createElement("div");
       el.className = `card card--${card.type}`;
+
+      if (card.kind === "special" && card.special) {
+        el.classList.add("card--special");
+        el.style.borderColor = card.special.color;
+        el.style.background = `linear-gradient(160deg, ${card.special.color}55, #1f1f1f)`;
+      }
 
       const typeLabel = document.createElement("div");
       typeLabel.className = "card__type";

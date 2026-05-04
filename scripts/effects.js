@@ -1,6 +1,10 @@
 // Efeitos visuais — Fase 4.
 // Funções pequenas que criam elementos temporários no DOM.
 
+export function spawnLevelUpText(layer, x, y) {
+  spawnFloatingText(layer, x, y, "LEVEL UP!", "level");
+}
+
 export function spawnFloatingText(layer, x, y, text, variant = "xp") {
   const el = document.createElement("div");
   el.className = `floating-text floating-text--${variant}`;

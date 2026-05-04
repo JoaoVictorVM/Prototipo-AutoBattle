@@ -61,6 +61,10 @@
   border-color: #c87a2a;
 }
 
+.card--special {
+  border-width: 2px;
+}
+
 .card--move_speed {
   background: linear-gradient(160deg, #143a3a, #1f1f1f);
   border-color: #1ABC9C;

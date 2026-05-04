@@ -1,4 +1,4 @@
-import { PLAYER_UNIT, ENEMY_BASE, WAVE } from "./constants.js";
+import { PLAYER_UNIT, ENEMY_BASE, WAVE, EFFECTS, SPECIALS } from "./constants.js";
 import { state, nextId } from "./state.js";
 
 let heroCounter = 0;
@@ -86,6 +86,21 @@ export function applyUpgrade(unit, kind) {
       break;
     }
   }
+}
+
+export function applySpecial(unit, special) {
+  if (!special) return;
+  if (unit.specials.find((s) => s.key === special.key)) return;
+  unit.specials.push(special);
+  if (special.key === SPECIALS.RANGED.key) {
+    unit.range = Math.max(unit.range, EFFECTS.RANGED_RANGE);
+  } else if (special.key === SPECIALS.SPEED.key) {
+    unit.moveSpeed += EFFECTS.SPEED_SPECIAL_BONUS;
+  }
+}
+
+export function hasSpecial(unit, key) {
+  return unit.specials.some((s) => s.key === key);
 }
 
 export function totalUpgrades(unit) {
