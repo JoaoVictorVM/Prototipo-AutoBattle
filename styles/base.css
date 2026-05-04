@@ -30,12 +30,16 @@
   /* Layout */
   --max-width: 900px;
   --field-height: 400px;
+
+  /* Tipografia */
+  --font-main: "Press Start 2P", "Courier New", monospace;
 }
 
 body {
   background: var(--color-bg);
   color: var(--color-text);
   font-size: 14px;
+  font-family: var(--font-main);
 }
 
 h1,
