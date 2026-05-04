@@ -42,6 +42,8 @@ export const state = {
   // { kind: 'player' } | { kind: 'unit', unitId: number }
   pendingLevelUps: [],
   resumePhase: null,
+
+  gameOverShown: false,
 };
 
 export function resetState() {
@@ -67,6 +69,7 @@ export function resetState() {
   state.pendingEvents = [];
   state.pendingLevelUps = [];
   state.resumePhase = null;
+  state.gameOverShown = false;
 }
 
 export function nextId(key) {

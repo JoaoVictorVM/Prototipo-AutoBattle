@@ -19,7 +19,7 @@ import { spawnWave } from "./waves.js";
 import { combatTick } from "./combat.js";
 import { addPlayerXP, xpForKill, xpForWaveComplete } from "./xp.js";
 import { addUnitXP } from "./unit-xp.js";
-import { spawnLevelUpText } from "./effects.js";
+import { spawnLevelUpText, spawnFloatingText } from "./effects.js";
 import {
   initUI,
   renderAll,
@@ -29,7 +29,9 @@ import {
   renderParty,
   renderXPBar,
   renderModal,
+  renderGameOverModal,
   closeModal,
+  clearGameDOM,
   getEffectsLayer,
 } from "./ui.js";
 
@@ -112,13 +114,24 @@ function handlePostTickEvents() {
   let killDelta = 0;
   let xpDelta = 0;
 
+  const layer = getEffectsLayer();
   for (const ev of state.pendingEvents) {
     if (ev.type !== "death") continue;
     const u = ev.unit;
     if (u.kind === "enemy") {
       scoreDelta += 10;
       killDelta += 1;
-      xpDelta += xpForKill(state.wave);
+      const xp = xpForKill(state.wave);
+      xpDelta += xp;
+      if (layer) {
+        spawnFloatingText(
+          layer,
+          u.x,
+          u.y - u.size / 2,
+          `+${xp} XP`,
+          "xp"
+        );
+      }
     } else if (u.kind === "ally") {
       freeSlotByUnit(u.id);
     }
@@ -158,6 +171,7 @@ function checkUnitLevelUps() {
 function maybeStartLevelUpFlow() {
   if (state.pendingLevelUps.length === 0) return;
   if (state.phase === PHASE.PAUSED_LEVEL_UP) return;
+  if (state.phase === PHASE.GAME_OVER) return;
   state.resumePhase = state.phase;
   state.phase = PHASE.PAUSED_LEVEL_UP;
   showNextLevelUp();
@@ -266,10 +280,7 @@ function frame(now) {
     renderXPBar();
 
     maybeStartLevelUpFlow();
-
-    if (state.phase === PHASE.GAME_OVER) {
-      renderAll();
-    }
+    maybeShowGameOver();
   } else if (state.phase === PHASE.BETWEEN_WAVES) {
     state.pendingWaveTimer -= dt;
     processCombatEvents();
@@ -287,9 +298,34 @@ function frame(now) {
     // residuais para nada ficar travado no meio.
     processCombatEvents();
     syncUnitsFrame();
+  } else if (state.phase === PHASE.GAME_OVER) {
+    maybeShowGameOver();
   }
 
   requestAnimationFrame(frame);
+}
+
+function maybeShowGameOver() {
+  if (state.phase !== PHASE.GAME_OVER) return;
+  if (state.gameOverShown) return;
+  state.gameOverShown = true;
+  renderHUD();
+  renderGameOverModal(
+    {
+      wave: state.wave,
+      kills: state.enemiesKilled,
+      score: state.score,
+    },
+    restartGame
+  );
+}
+
+function restartGame() {
+  resetState();
+  clearGameDOM();
+  initGrid();
+  drawInitialHand();
+  renderAll();
 }
 
 // ---- Bootstrap ---------------------------------------------------------

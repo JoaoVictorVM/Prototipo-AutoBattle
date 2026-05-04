@@ -84,7 +84,26 @@ export function renderAll() {
 export function renderHUD() {
   dom.hudWave.textContent = state.wave;
   dom.hudScore.textContent = state.score;
-  dom.hudStatus.textContent = state.phase;
+  dom.hudStatus.textContent = phaseLabel();
+}
+
+function phaseLabel() {
+  switch (state.phase) {
+    case PHASE.SETUP:
+      return "MONTANDO TIME";
+    case PHASE.BATTLE:
+      return `BATALHA — ${state.enemies.length} inimigos`;
+    case PHASE.BETWEEN_WAVES: {
+      const t = Math.max(0, state.pendingWaveTimer);
+      return `PRÓXIMA WAVE EM ${t.toFixed(1)}s`;
+    }
+    case PHASE.PAUSED_LEVEL_UP:
+      return "LEVEL UP";
+    case PHASE.GAME_OVER:
+      return "GAME OVER";
+    default:
+      return state.phase;
+  }
 }
 
 export function renderStartButton() {
@@ -180,15 +199,8 @@ export function processCombatEvents() {
       void damage;
     } else if (ev.type === "death") {
       const { unit } = ev;
-      if (unit.kind === "enemy" && dom.effectsLayer) {
-        spawnFloatingText(
-          dom.effectsLayer,
-          unit.x,
-          unit.y - unit.size / 2,
-          "+10 XP",
-          "xp"
-        );
-      }
+      // o floating text de XP é responsabilidade de main.js (que sabe
+      // o valor exato de XP ganho), aqui só animamos a morte.
       playDeath(unit.el, () => {
         unit.el = null;
         unit._hpFill = null;
@@ -452,4 +464,57 @@ export function renderModal({ title, subtitle, cards, onPick, footer }) {
 
 export function closeModal() {
   dom.modalRoot.innerHTML = "";
+}
+
+export function renderGameOverModal({ wave, kills, score }, onRestart) {
+  dom.modalRoot.innerHTML = "";
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+
+  const modal = document.createElement("div");
+  modal.className = "modal modal--game-over";
+
+  const title = document.createElement("h2");
+  title.className = "modal__title";
+  title.textContent = "GAME OVER";
+  modal.appendChild(title);
+
+  const sub = document.createElement("div");
+  sub.className = "modal__subtitle";
+  sub.textContent = "Seus heróis caíram";
+  modal.appendChild(sub);
+
+  const stats = [
+    ["Wave alcançada", wave],
+    ["Inimigos mortos", kills],
+    ["Score", score],
+  ];
+  for (const [label, value] of stats) {
+    const row = document.createElement("div");
+    row.className = "modal__stat";
+    const span = document.createElement("span");
+    span.textContent = String(value);
+    row.append(`${label}: `, span);
+    modal.appendChild(row);
+  }
+
+  const btn = document.createElement("button");
+  btn.className = "modal__btn";
+  btn.textContent = "Jogar Novamente";
+  btn.addEventListener("click", () => onRestart?.());
+  modal.appendChild(btn);
+
+  overlay.appendChild(modal);
+  dom.modalRoot.appendChild(overlay);
+}
+
+// Limpa os elementos das unidades e efeitos remanescentes do DOM.
+// Usado no restart, já que as referências de `el` vivem nos objetos
+// das unidades em state — quando o estado é resetado, os elementos
+// soltos no DOM precisam ser removidos manualmente.
+export function clearGameDOM() {
+  if (dom.unitsLayer) dom.unitsLayer.innerHTML = "";
+  if (dom.effectsLayer) dom.effectsLayer.innerHTML = "";
+  if (dom.gridLayer) dom.gridLayer.innerHTML = "";
+  closeModal();
 }

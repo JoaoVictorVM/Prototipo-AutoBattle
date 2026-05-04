@@ -48,6 +48,17 @@
   margin-bottom: 16px;
 }
 
+.modal--game-over {
+  border-color: var(--color-enemy);
+  box-shadow: 0 0 32px rgba(231, 76, 60, 0.25);
+}
+
+.modal--game-over .modal__title {
+  color: var(--color-enemy);
+  letter-spacing: 0.16em;
+  font-size: 28px;
+}
+
 .modal__btn {
   padding: 10px 24px;
   background: var(--color-ally);
