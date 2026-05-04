@@ -1,0 +1,46 @@
+:root {
+  /* Cores */
+  --color-ally: hsl(141, 53%, 53%);
+  --color-enemy: hsl(6, 78%, 57%);
+  --color-bg: #0d0d0d;
+  --color-panel: #1a1a1a;
+  --color-border: #2e2e2e;
+  --color-xp: #c9a227;
+  --color-text: #e8e8e8;
+  --color-text-muted: #888;
+
+  /* Habilidades especiais */
+  --color-skill-double: #4a90d9;
+  --color-skill-ranged: #f5a623;
+  --color-skill-splash: #9b59b6;
+  --color-skill-vampire: #c0392b;
+  --color-skill-speed: #1abc9c;
+
+  /* Tamanhos */
+  --unit-size: 24px;
+  --slot-size: 48px;
+  --card-width: 120px;
+  --card-height: 170px;
+
+  /* Velocidades de transição */
+  --speed-fast: 150ms;
+  --speed-normal: 250ms;
+  --speed-slow: 400ms;
+
+  /* Layout */
+  --max-width: 900px;
+  --field-height: 400px;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}

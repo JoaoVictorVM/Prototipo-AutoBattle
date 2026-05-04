@@ -1,0 +1,64 @@
+/* Flash de dano */
+@keyframes damage-flash {
+  0% { filter: brightness(1); }
+  30% { filter: brightness(3) saturate(0); }
+  100% { filter: brightness(1); }
+}
+
+.is-damaged {
+  animation: damage-flash 200ms ease-out;
+}
+
+/* Punch forward */
+@keyframes attack-punch {
+  0% { transform: translate(-50%, -50%); }
+  40% {
+    transform: translate(
+      calc(-50% + var(--punch-x, 0px)),
+      calc(-50% + var(--punch-y, 0px))
+    );
+  }
+  100% { transform: translate(-50%, -50%); }
+}
+
+.is-attacking {
+  animation: attack-punch 250ms ease-out;
+}
+
+/* Morte */
+@keyframes unit-death {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.3); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+}
+
+.is-dying {
+  animation: unit-death 400ms ease-out forwards;
+  pointer-events: none;
+}
+
+/* Floating texts */
+@keyframes float-up-fade {
+  0% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -28px); }
+}
+
+.floating-text {
+  position: absolute;
+  font-size: 12px;
+  font-weight: 700;
+  pointer-events: none;
+  animation: float-up-fade 900ms ease-out forwards;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  transform: translate(-50%, 0);
+}
+
+.floating-text--xp { color: var(--color-xp); }
+.floating-text--level { color: #fff; font-size: 14px; }
+
+/* Indicador "selecionando alvo" */
+.is-targetable {
+  outline: 2px dashed var(--color-xp);
+  outline-offset: 2px;
+}

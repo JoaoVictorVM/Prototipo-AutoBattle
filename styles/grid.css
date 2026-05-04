@@ -1,0 +1,33 @@
+.slot {
+  position: absolute;
+  width: var(--slot-size);
+  height: var(--slot-size);
+  border: 2px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  transform: translate(-50%, -50%);
+  transition: background var(--speed-fast), border-color var(--speed-fast),
+    box-shadow var(--speed-fast);
+  cursor: pointer;
+}
+
+.slot:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.slot--highlighted {
+  border-color: var(--color-ally);
+  box-shadow: 0 0 12px rgba(72, 199, 116, 0.55);
+  background: rgba(72, 199, 116, 0.12);
+  animation: slot-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes slot-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(72, 199, 116, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(72, 199, 116, 0.75);
+  }
+}

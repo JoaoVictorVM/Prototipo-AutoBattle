@@ -1,0 +1,9 @@
+.app {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 100%;
+}

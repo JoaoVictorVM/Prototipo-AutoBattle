@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Auto Battler Roguelike — Protótipo</title>
+
+    <link rel="stylesheet" href="styles/reset.css" />
+    <link rel="stylesheet" href="styles/base.css" />
+    <link rel="stylesheet" href="styles/layout.css" />
+    <link rel="stylesheet" href="styles/game-display.css" />
+    <link rel="stylesheet" href="styles/grid.css" />
+    <link rel="stylesheet" href="styles/unit.css" />
+    <link rel="stylesheet" href="styles/xp-bar.css" />
+    <link rel="stylesheet" href="styles/party-panel.css" />
+    <link rel="stylesheet" href="styles/hand.css" />
+    <link rel="stylesheet" href="styles/card.css" />
+    <link rel="stylesheet" href="styles/hud.css" />
+    <link rel="stylesheet" href="styles/modal.css" />
+    <link rel="stylesheet" href="styles/animations.css" />
+  </head>
+  <body>
+    <main id="app" class="app">
+      <header id="hud" class="hud">
+        <div class="hud__item">
+          Wave: <span id="hud-wave">1</span>
+        </div>
+        <div class="hud__item">
+          Score: <span id="hud-score">0</span>
+        </div>
+        <div class="hud__item hud__item--status" id="hud-status">SETUP</div>
+      </header>
+
+      <section id="game-display" class="game-display">
+        <div id="battlefield" class="battlefield">
+          <div id="grid-layer" class="grid-layer"></div>
+          <div id="units-layer" class="units-layer"></div>
+          <div id="effects-layer" class="effects-layer"></div>
+        </div>
+        <button id="start-battle-btn" class="start-battle-btn" disabled>
+          Iniciar Batalha
+        </button>
+      </section>
+
+      <section id="xp-bar" class="xp-bar">
+        <div class="xp-bar__fill" id="xp-bar-fill"></div>
+        <div class="xp-bar__label">
+          Nível <span id="xp-level">1</span> —
+          <span id="xp-current">0</span>/<span id="xp-needed">100</span> XP
+        </div>
+      </section>
+
+      <section id="party-panel" class="party-panel">
+        <h2 class="party-panel__title">Party</h2>
+        <div id="party-list" class="party-panel__list"></div>
+      </section>
+
+      <section id="hand" class="hand">
+        <h2 class="hand__title">Mão</h2>
+        <div id="hand-list" class="hand__list"></div>
+      </section>
+    </main>
+
+    <div id="modal-root" class="modal-root"></div>
+
+    <script type="module" src="scripts/main.js"></script>
+  </body>
+</html>

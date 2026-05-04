@@ -1,0 +1,22 @@
+.hand {
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.hand__title {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 12px;
+  letter-spacing: 0.1em;
+}
+
+.hand__list {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  min-height: var(--card-height);
+  flex-wrap: wrap;
+}

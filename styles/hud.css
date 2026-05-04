@@ -1,0 +1,30 @@
+.hud {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.hud__item {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.hud__item span {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.hud__item--status {
+  margin-left: auto;
+  padding: 4px 10px;
+  background: #141414;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-xp);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
