@@ -42,9 +42,6 @@
   pointer-events: none;
 }
 
-/* Apenas os elementos interativos das camadas recebem clique/drop;
-   o restante deixa o evento atravessar até o battlefield, que é o
-   drop target livre para cartas de Personagem. */
 .units-layer .unit {
   pointer-events: auto;
 }
@@ -56,7 +53,9 @@
   color: #0d0d0d;
   font-weight: 600;
   border-radius: 6px;
-  transition: transform var(--speed-fast), opacity var(--speed-fast);
+  transition:
+    transform var(--speed-fast),
+    opacity var(--speed-fast);
 }
 
 .start-battle-btn:disabled {

@@ -1,6 +1,4 @@
 .party-panel {
-  background: var(--color-panel);
-  border: 1px solid var(--color-border);
   border-radius: 6px;
   padding: 12px;
 }

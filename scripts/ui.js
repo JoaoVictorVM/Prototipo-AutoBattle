@@ -103,18 +103,11 @@ function phaseLabel() {
 }
 
 export function renderStartButton() {
-  const canStart =
-    state.phase === PHASE.SETUP && state.units.length > 0;
+  const canStart = state.phase === PHASE.SETUP && state.units.length > 0;
   dom.startBtn.disabled = !canStart;
   dom.startBtn.style.display =
     state.phase === PHASE.SETUP ? "inline-block" : "none";
 }
-
-// (removido) renderGrid — slots foram aposentados. O <div id="battlefield">
-// já carrega data-drop-zone="field" no HTML, então qualquer ponto do
-// campo é alvo válido para cartas de Personagem.
-
-// Atualização leve por frame: posições e barras de HP. Não recria DOM.
 export function syncUnitsFrame() {
   for (const u of state.units) {
     if (!u.el) continue;
@@ -136,7 +129,6 @@ export function syncUnitsFrame() {
   }
 }
 
-// Consome eventos do combate (flash de dano, punch, morte, floating text).
 export function processCombatEvents() {
   if (state.pendingEvents.length === 0) return;
   const events = state.pendingEvents;
@@ -149,15 +141,13 @@ export function processCombatEvents() {
         playAttackPunch(
           attacker.el,
           target.x - attacker.x,
-          target.y - attacker.y
+          target.y - attacker.y,
         );
       }
       if (target.el) flashDamage(target.el);
       void damage;
     } else if (ev.type === "death") {
       const { unit } = ev;
-      // o floating text de XP é responsabilidade de main.js (que sabe
-      // o valor exato de XP ganho), aqui só animamos a morte.
       playDeath(unit.el, () => {
         unit.el = null;
         unit._hpFill = null;
@@ -167,7 +157,6 @@ export function processCombatEvents() {
 }
 
 export function renderUnits() {
-  // Renderização inicial: cria elementos para unidades sem `el`.
   for (const u of state.units) {
     if (!u.el) {
       const el = document.createElement("div");
@@ -238,11 +227,11 @@ function blendSpecialColors(specials) {
   }
   const avg = rgbs.reduce(
     (acc, c) => ({ r: acc.r + c.r, g: acc.g + c.g, b: acc.b + c.b }),
-    { r: 0, g: 0, b: 0 }
+    { r: 0, g: 0, b: 0 },
   );
   const n = rgbs.length;
   return `rgb(${Math.round(avg.r / n)}, ${Math.round(avg.g / n)}, ${Math.round(
-    avg.b / n
+    avg.b / n,
   )})`;
 }
 
@@ -270,8 +259,7 @@ export function renderParty() {
   dom.partyList.innerHTML = "";
   if (state.units.length === 0) {
     const empty = document.createElement("div");
-    empty.className = "party-member__upgrades";
-    empty.textContent = "Sem heróis. Use a carta de Personagem.";
+
     dom.partyList.appendChild(empty);
     return;
   }
@@ -282,7 +270,9 @@ export function renderParty() {
     const icon = document.createElement("div");
     icon.className = "party-member__icon";
     icon.style.background =
-      u.specials.length > 0 ? blendSpecialColors(u.specials) : "var(--color-ally)";
+      u.specials.length > 0
+        ? blendSpecialColors(u.specials)
+        : "var(--color-ally)";
     card.appendChild(icon);
 
     const info = document.createElement("div");
@@ -323,8 +313,7 @@ export function renderHand() {
   dom.handList.innerHTML = "";
   if (state.hand.length === 0) {
     const empty = document.createElement("div");
-    empty.className = "card__desc";
-    empty.textContent = "Mão vazia.";
+
     dom.handList.appendChild(empty);
     return;
   }
@@ -388,7 +377,6 @@ export function renderModal({ title, subtitle, cards, onPick, footer }) {
       if (card.kind === "special" && card.special) {
         el.classList.add("card--special");
         el.style.borderColor = card.special.color;
-        el.style.background = `linear-gradient(160deg, ${card.special.color}55, #1f1f1f)`;
       }
 
       const typeLabel = document.createElement("div");

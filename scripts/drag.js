@@ -1,17 +1,3 @@
-// Sistema genérico de drag-and-drop. Sem dependências externas.
-//
-// Uso:
-//   enableDrag(elemento, {
-//     payload: { cardId, cardType },
-//     canDrop: (target, payload) => boolean,
-//     onDrop:  ({ target, zone, clientX, clientY, payload }) => void,
-//     onCancel: (payload) => void,
-//   });
-//
-// O elemento de origem fica em opacity baixa enquanto o drag está ativo.
-// Um clone (ghost) segue o cursor com leve rotação. Drop válido dispara
-// onDrop; inválido executa animação de retorno e dispara onCancel.
-
 let active = null;
 let lastHover = null;
 
@@ -103,8 +89,6 @@ function isValidTarget(target) {
 
 function findDropTarget(x, y) {
   if (!active) return null;
-  // Esconde temporariamente o ghost para que elementFromPoint enxergue
-  // o que está debaixo dele.
   active.ghost.style.visibility = "hidden";
   const el = document.elementFromPoint(x, y);
   active.ghost.style.visibility = "";
@@ -124,7 +108,7 @@ function animateReturn() {
   ghost.classList.add("is-returning");
   ghost.style.transition =
     "left 250ms ease-out, top 250ms ease-out, transform 250ms ease-out";
-  void ghost.offsetWidth; // força reflow para aplicar a transição
+  void ghost.offsetWidth;
   ghost.style.left = `${originLeft}px`;
   ghost.style.top = `${originTop}px`;
   ghost.style.transform = "rotate(0deg) translateY(0)";

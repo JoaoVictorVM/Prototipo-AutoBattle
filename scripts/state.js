@@ -29,11 +29,8 @@ export const state = {
 
   pendingWaveTimer: 0,
 
-  // Eventos consumidos pela UI (combat.js empurra, ui.js consome e limpa).
   pendingEvents: [],
 
-  // Fila de level ups pendentes (jogador e personagens). Cada entrada:
-  // { kind: 'player' } | { kind: 'unit', unitId: number }
   pendingLevelUps: [],
   resumePhase: null,
 

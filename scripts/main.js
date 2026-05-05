@@ -28,9 +28,6 @@ import {
   getEffectsLayer,
 } from "./ui.js";
 
-// ---- Drag-and-drop -----------------------------------------------------
-
-// Validação síncrona do alvo durante o arraste (para feedback visual).
 function canCardDrop(payload, target) {
   if (state.phase === PHASE.GAME_OVER) return false;
   if (!payload || !target) return false;
@@ -41,7 +38,6 @@ function canCardDrop(payload, target) {
     return zone === "field";
   }
 
-  // Cartas de upgrade só caem em unidades aliadas (campo ou party panel).
   if (zone === "unit") {
     const unitId = Number(target.dataset.unitId);
     return state.units.some((u) => u.id === unitId);
@@ -71,8 +67,14 @@ function spawnCharacterAtClient(card, clientX, clientY) {
   if (!bf) return;
   const r = bf.getBoundingClientRect();
   const margin = 16;
-  const x = Math.max(margin, Math.min(state.field.width - margin, clientX - r.left));
-  const y = Math.max(margin, Math.min(state.field.height - margin, clientY - r.top));
+  const x = Math.max(
+    margin,
+    Math.min(state.field.width - margin, clientX - r.left),
+  );
+  const y = Math.max(
+    margin,
+    Math.min(state.field.height - margin, clientY - r.top),
+  );
 
   const unit = createPlayerUnit(x, y);
   state.units.push(unit);
@@ -96,8 +98,6 @@ function onStartBattle() {
   renderAll();
 }
 
-// ---- Eventos pós-combate (XP, score) -----------------------------------
-
 function handlePostTickEvents() {
   let scoreDelta = 0;
   let killDelta = 0;
@@ -113,13 +113,7 @@ function handlePostTickEvents() {
       const xp = xpForKill(state.wave);
       xpDelta += xp;
       if (layer) {
-        spawnFloatingText(
-          layer,
-          u.x,
-          u.y - u.size / 2,
-          `+${xp} XP`,
-          "xp"
-        );
+        spawnFloatingText(layer, u.x, u.y - u.size / 2, `+${xp} XP`, "xp");
       }
     }
   }
@@ -133,8 +127,6 @@ function handlePostTickEvents() {
   }
 }
 
-// ---- Level up flow -----------------------------------------------------
-
 function awardPlayerXP(amount) {
   const levels = addPlayerXP(amount);
   for (let i = 0; i < levels; i++) {
@@ -143,7 +135,6 @@ function awardPlayerXP(amount) {
 }
 
 function checkUnitLevelUps() {
-  // combat.js já incrementou unit.xp; aqui só consumimos os thresholds.
   for (const u of state.units) {
     const levels = addUnitXP(u, 0);
     for (let i = 0; i < levels; i++) {
@@ -180,15 +171,12 @@ function showNextLevelUp() {
   }
 }
 
-// Garante que o ciclo apply→render→nextModal não fique parado se algo
-// dentro do apply ou do render lançar uma exceção. Também previne
-// double-click consumindo dois itens da fila com um único pick.
 function safePickHandler(applyFn) {
   let consumed = false;
   return (option) => {
     if (consumed) return;
     consumed = true;
-    closeModal(); // feedback imediato; o próximo modal substitui se houver
+    closeModal();
     try {
       applyFn(option);
     } catch (err) {
@@ -240,8 +228,6 @@ function applyUnitLevelUpOption(unit, option) {
   }
 }
 
-// ---- Loop principal ----------------------------------------------------
-
 let lastFrame = performance.now();
 
 function frame(now) {
@@ -254,7 +240,6 @@ function frame(now) {
     handlePostTickEvents();
     checkUnitLevelUps();
 
-    // Bônus de XP se a wave foi concluída neste tick.
     if (prevPhase === PHASE.BATTLE && state.phase === PHASE.BETWEEN_WAVES) {
       awardPlayerXP(xpForWaveComplete(state.wave));
     }
@@ -281,8 +266,6 @@ function frame(now) {
       renderAll();
     }
   } else if (state.phase === PHASE.PAUSED_LEVEL_UP) {
-    // Pausa total — modal fica visível, só processamos animações
-    // residuais para nada ficar travado no meio.
     processCombatEvents();
     syncUnitsFrame();
   } else if (state.phase === PHASE.GAME_OVER) {
@@ -303,7 +286,7 @@ function maybeShowGameOver() {
       kills: state.enemiesKilled,
       score: state.score,
     },
-    restartGame
+    restartGame,
   );
 }
 
@@ -313,8 +296,6 @@ function restartGame() {
   drawInitialHand();
   renderAll();
 }
-
-// ---- Bootstrap ---------------------------------------------------------
 
 function start() {
   initUI({

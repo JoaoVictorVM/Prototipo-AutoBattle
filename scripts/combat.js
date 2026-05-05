@@ -1,6 +1,3 @@
-// Loop de combate. NÃO toca no DOM — apenas atualiza o estado e empurra
-// eventos para state.pendingEvents para que ui.js os consuma.
-
 import { state } from "./state.js";
 import { PHASE, EFFECTS, GAME, SPECIALS } from "./constants.js";
 import { hasSpecial } from "./units.js";
@@ -161,7 +158,7 @@ function tickDoubleAttack(u, dt) {
 
   u.doubleAttackPending = false;
   let target = state.enemies.find(
-    (e) => e.id === u.doubleAttackTargetId && !e.isDead
+    (e) => e.id === u.doubleAttackTargetId && !e.isDead,
   );
   if (!target) target = nearestEnemy(u);
   if (!target) return;
@@ -172,37 +169,25 @@ function doAttack(attacker, target, isFollowUp = false) {
   const damage = attacker.atk;
   applyDamage(attacker, target, damage);
 
-  // XP individual: aliados ganham XP igual ao dano que causaram.
   if (attacker.kind === "ally") {
     attacker.xp += damage;
   }
 
-  // Splash (apenas aliados com Splash, ataque corpo a corpo no alvo).
-  if (
-    attacker.kind === "ally" &&
-    hasSpecial(attacker, SPECIALS.SPLASH.key)
-  ) {
+  if (attacker.kind === "ally" && hasSpecial(attacker, SPECIALS.SPLASH.key)) {
     for (const e of state.enemies) {
       if (e === target || e.isDead) continue;
-      if (
-        Math.hypot(e.x - target.x, e.y - target.y) <= EFFECTS.SPLASH_RADIUS
-      ) {
+      if (Math.hypot(e.x - target.x, e.y - target.y) <= EFFECTS.SPLASH_RADIUS) {
         applyDamage(attacker, e, damage);
         attacker.xp += damage;
       }
     }
   }
 
-  // Vampirismo
-  if (
-    attacker.kind === "ally" &&
-    hasSpecial(attacker, SPECIALS.VAMPIRE.key)
-  ) {
+  if (attacker.kind === "ally" && hasSpecial(attacker, SPECIALS.VAMPIRE.key)) {
     const heal = damage * EFFECTS.VAMPIRE_RATIO;
     attacker.hp = Math.min(attacker.maxHp, attacker.hp + heal);
   }
 
-  // Ataque Duplo: agenda um segundo ataque (não recursivo).
   if (
     !isFollowUp &&
     attacker.kind === "ally" &&
