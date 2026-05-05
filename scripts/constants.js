@@ -127,27 +127,27 @@ export const CARD_INFO = {
   [CARD_TYPES.CHARACTER]: {
     title: "Novo Herói",
     typeLabel: "Personagem",
-    desc: "Coloca um novo aliado em qualquer ponto do campo.",
+    // desc: "Coloca um novo aliado em qualquer ponto do campo.",
   },
   [CARD_TYPES.HP]: {
     title: "+Vida",
     typeLabel: "Upgrade",
-    desc: `+${UPGRADES.HP_BONUS} HP em um aliado.`,
+    // desc: `+${UPGRADES.HP_BONUS} HP em um aliado.`,
   },
   [CARD_TYPES.ATK]: {
     title: "+Dano",
     typeLabel: "Upgrade",
-    desc: `+${UPGRADES.ATK_BONUS} ATK em um aliado.`,
+    // desc: `+${UPGRADES.ATK_BONUS} ATK em um aliado.`,
   },
   [CARD_TYPES.ATK_SPEED]: {
     title: "+Vel. Ataque",
     typeLabel: "Upgrade",
-    desc: `+${UPGRADES.ATK_SPEED_BONUS} ATK/s em um aliado.`,
+    // desc: `+${UPGRADES.ATK_SPEED_BONUS} ATK/s em um aliado.`,
   },
   [CARD_TYPES.MOVE_SPEED]: {
     title: "+Movimento",
     typeLabel: "Upgrade",
-    desc: `+${UPGRADES.MOVE_SPEED_BONUS} velocidade.`,
+    // desc: `+${UPGRADES.MOVE_SPEED_BONUS} velocidade.`,
   },
 };
 
@@ -156,31 +156,31 @@ export const SPECIALS = {
     key: "double",
     name: "Ataque Duplo",
     color: "#4A90D9",
-    desc: "Dispara 2x por ataque (200ms).",
+    // desc: "Dispara 2x por ataque (200ms).",
   },
   RANGED: {
     key: "ranged",
     name: "Ataque à Distância",
     color: "#F5A623",
-    desc: "Range aumenta para 150px.",
+    // desc: "Range aumenta para 150px.",
   },
   SPLASH: {
     key: "splash",
     name: "Splash",
     color: "#9B59B6",
-    desc: "Dano em raio de 60px.",
+    // desc: "Dano em raio de 60px.",
   },
   VAMPIRE: {
     key: "vampire",
     name: "Vampirismo",
     color: "#C0392B",
-    desc: "30% do dano vira HP.",
+    // desc: "30% do dano vira HP.",
   },
   SPEED: {
     key: "speed",
     name: "Velocidade",
     color: "#1ABC9C",
-    desc: "+25 MOVE_SPEED.",
+    // desc: "+25 MOVE_SPEED.",
   },
 };
 

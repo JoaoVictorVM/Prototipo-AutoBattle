@@ -9,7 +9,9 @@
   flex-direction: column;
   gap: 6px;
   cursor: pointer;
-  transition: transform var(--speed-normal), box-shadow var(--speed-normal);
+  transition:
+    transform var(--speed-normal),
+    box-shadow var(--speed-normal);
   user-select: none;
   position: relative;
 }
@@ -42,23 +44,23 @@
 }
 
 .card--character {
-  background: linear-gradient(160deg, #1e3a2a, #1f1f1f);
-  border-color: #2e6b46;
+  /* background: linear-gradient(160deg, #1e3a2a, #1f1f1f); */
+  border: 2px dashed #2e6b46;
 }
 
 .card--hp {
-  background: linear-gradient(160deg, #1c2c4a, #1f1f1f);
-  border-color: #3a6dbf;
+  /* background: linear-gradient(160deg, #1c2c4a, #1f1f1f); */
+  border: 2px dashed #3a6dbf;
 }
 
 .card--atk {
-  background: linear-gradient(160deg, #4a1c1c, #1f1f1f);
-  border-color: #a83838;
+  /* background: linear-gradient(160deg, #4a1c1c, #1f1f1f); */
+  border: 2px dashed #a83838;
 }
 
 .card--atk_speed {
-  background: linear-gradient(160deg, #4a3018, #1f1f1f);
-  border-color: #c87a2a;
+  /* background: linear-gradient(160deg, #4a3018, #1f1f1f); */
+  border: 2px dashed #c87a2a;
 }
 
 .card--special {
@@ -93,6 +95,6 @@ body.is-dragging * {
 }
 
 .card--move_speed {
-  background: linear-gradient(160deg, #143a3a, #1f1f1f);
-  border-color: #1ABC9C;
+  /* background: linear-gradient(160deg, #143a3a, #1f1f1f); */
+  border: 2px dashed #1abc9c;
 }

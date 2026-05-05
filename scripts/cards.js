@@ -95,13 +95,9 @@ function makeSpecialOption(special) {
   };
 }
 
-// Sorteia 3 opções para o level up de um personagem. Cada slot tem
-// UNIT_XP.SPECIAL_CHANCE de chance de virar uma habilidade especial,
-// limitado às habilidades que o personagem ainda não possui. No máximo
-// uma habilidade especial por sorteio (PRD).
 export function rollUnitLevelUpOptions(unit, count = 3) {
   const available = Object.values(SPECIALS).filter(
-    (s) => !unit.specials.find((x) => x.key === s.key)
+    (s) => !unit.specials.find((x) => x.key === s.key),
   );
   let specialUsed = false;
   const result = [];
@@ -125,4 +121,3 @@ export function rollUnitLevelUpOptions(unit, count = 3) {
   }
   return result;
 }
-
