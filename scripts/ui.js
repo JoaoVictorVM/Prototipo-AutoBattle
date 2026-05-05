@@ -8,6 +8,7 @@ import {
   spawnFloatingText,
 } from "./effects.js";
 import { enableDrag } from "./drag.js";
+import { play as playSfx } from "./audio.js";
 
 const dom = {
   hudWave: null,
@@ -145,6 +146,7 @@ export function processCombatEvents() {
         );
       }
       if (target.el) flashDamage(target.el);
+      playSfx("hit");
       void damage;
     } else if (ev.type === "death") {
       const { unit } = ev;
@@ -341,7 +343,12 @@ export function renderHand() {
       payload: { cardId: card.id, cardType: card.type },
       canDrop: (target, payload) =>
         handlers.canCardDrop?.(payload, target) ?? false,
-      onDrop: (info) => handlers.onCardDrop?.(info),
+      onDragStart: () => playSfx("cardPickup"),
+      onDrop: (info) => {
+        playSfx("cardDropValid");
+        handlers.onCardDrop?.(info);
+      },
+      onCancel: () => playSfx("cardDropInvalid"),
     });
 
     dom.handList.appendChild(el);

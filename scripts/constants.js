@@ -3,7 +3,7 @@ export const GAME = {
   FIELD_WIDTH: 852,
   FIELD_HEIGHT: 400,
   PLAYER_HALF_Y: 200,
-  WAVE_PAUSE_MS: 3000,
+  WAVE_PAUSE_MS: 1000,
   SLOT_SIZE: 48,
   SLOT_SPACING: 56,
   INITIAL_HAND_SIZE: 3,
@@ -107,6 +107,11 @@ export const EFFECTS = {
   SPEED_SPECIAL_BONUS: 25,
 };
 
+export const AUDIO = {
+  MASTER_VOLUME: 0.35,
+  HIT_THROTTLE_MS: 35, // limita rajadas de hits muito próximas
+};
+
 export const CARD_POOL = {
   CHARACTER: 0.25,
   HP: 0.2,
@@ -125,7 +130,7 @@ export const CARD_TYPES = {
 
 export const CARD_INFO = {
   [CARD_TYPES.CHARACTER]: {
-    title: "Novo Herói",
+    title: "Herói",
     typeLabel: "Personagem",
     // desc: "Coloca um novo aliado em qualquer ponto do campo.",
   },
@@ -145,7 +150,7 @@ export const CARD_INFO = {
     // desc: `+${UPGRADES.ATK_SPEED_BONUS} ATK/s em um aliado.`,
   },
   [CARD_TYPES.MOVE_SPEED]: {
-    title: "+Movimento",
+    title: "+Vel.",
     typeLabel: "Upgrade",
     // desc: `+${UPGRADES.MOVE_SPEED_BONUS} velocidade.`,
   },

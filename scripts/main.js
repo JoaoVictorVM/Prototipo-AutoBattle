@@ -13,6 +13,7 @@ import { combatTick } from "./combat.js";
 import { addPlayerXP, xpForKill, xpForWaveComplete } from "./xp.js";
 import { addUnitXP } from "./unit-xp.js";
 import { spawnLevelUpText, spawnFloatingText } from "./effects.js";
+import { play as playSfx, unlockOnFirstInteraction } from "./audio.js";
 import {
   initUI,
   renderAll,
@@ -95,6 +96,8 @@ function onStartBattle() {
   state.phase = PHASE.BATTLE;
   state.wave = 1;
   spawnWave(state.wave);
+  playSfx("startBattle");
+  setTimeout(() => playSfx("waveStart"), 180);
   renderAll();
 }
 
@@ -115,6 +118,8 @@ function handlePostTickEvents() {
       if (layer) {
         spawnFloatingText(layer, u.x, u.y - u.size / 2, `+${xp} XP`, "xp");
       }
+      playSfx("enemyDeath");
+      playSfx("xpGain");
     }
   }
 
@@ -132,9 +137,11 @@ function awardPlayerXP(amount) {
   for (let i = 0; i < levels; i++) {
     state.pendingLevelUps.push({ kind: "player" });
   }
+  if (levels > 0) playSfx("levelUp");
 }
 
 function checkUnitLevelUps() {
+  let totalLevels = 0;
   for (const u of state.units) {
     const levels = addUnitXP(u, 0);
     for (let i = 0; i < levels; i++) {
@@ -142,7 +149,9 @@ function checkUnitLevelUps() {
       const layer = getEffectsLayer();
       if (layer) spawnLevelUpText(layer, u.x, u.y - u.size);
     }
+    totalLevels += levels;
   }
+  if (totalLevels > 0) playSfx("levelUp");
   void UNIT_XP;
 }
 
@@ -263,6 +272,7 @@ function frame(now) {
       state.wave += 1;
       spawnWave(state.wave);
       state.phase = PHASE.BATTLE;
+      playSfx("waveStart");
       renderAll();
     }
   } else if (state.phase === PHASE.PAUSED_LEVEL_UP) {
@@ -279,6 +289,7 @@ function maybeShowGameOver() {
   if (state.phase !== PHASE.GAME_OVER) return;
   if (state.gameOverShown) return;
   state.gameOverShown = true;
+  playSfx("gameOver");
   renderHUD();
   renderGameOverModal(
     {
@@ -303,6 +314,7 @@ function start() {
     onCardDrop,
     onStartBattle,
   });
+  unlockOnFirstInteraction();
   resetState();
   drawInitialHand();
   renderAll();
