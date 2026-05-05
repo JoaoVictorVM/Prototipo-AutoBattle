@@ -111,7 +111,7 @@ function animateReturn() {
   void ghost.offsetWidth;
   ghost.style.left = `${originLeft}px`;
   ghost.style.top = `${originTop}px`;
-  ghost.style.transform = "rotate(0deg) translateY(0)";
+  ghost.style.transform = "scale(1)";
 
   setTimeout(() => {
     options.onCancel?.(payload);

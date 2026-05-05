@@ -8,6 +8,18 @@
   transition: background-color var(--speed-normal);
 }
 
+/* Camada branca sobreposta usada pelo flash de hit. Fica invisível por
+   padrão; a animação .is-damaged anima a opacidade. */
+.unit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .unit__hp-bar {
   position: absolute;
   left: 0;

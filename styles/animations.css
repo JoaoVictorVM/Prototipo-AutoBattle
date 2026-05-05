@@ -1,12 +1,16 @@
-/* Flash de dano */
-@keyframes damage-flash {
-  0% { filter: brightness(1); }
-  30% { filter: brightness(3) saturate(0); }
-  100% { filter: brightness(1); }
+/* Flash de hit — overlay branco bem rápido sobre a unidade.
+   Usa o pseudo-elemento ::after definido em unit.css. */
+@keyframes hit-flash {
+  0% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
-.is-damaged {
-  animation: damage-flash 200ms ease-out;
+.is-damaged::after {
+  animation: hit-flash 160ms ease-out;
 }
 
 /* Punch forward */

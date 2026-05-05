@@ -78,7 +78,7 @@
 .card--ghost {
   pointer-events: none;
   z-index: 200;
-  transform: rotate(-4deg) translateY(-12px);
+  transform: scale(1.08);
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.6);
   cursor: grabbing;
 }
