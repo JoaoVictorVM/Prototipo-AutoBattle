@@ -394,6 +394,10 @@ export function renderHand() {
       el.style.borderColor = card.color;
     }
     el.dataset.cardId = String(card.id);
+    // Cards comuns são drop targets pra merge; specials não mergeáveis.
+    if (card.type !== "special") {
+      el.dataset.dropZone = "card";
+    }
 
     const typeLabel = document.createElement("div");
     typeLabel.className = "card__type";
@@ -410,10 +414,18 @@ export function renderHand() {
     desc.textContent = card.desc;
     el.appendChild(desc);
 
+    if (card.level && card.level > 0) {
+      const badge = document.createElement("div");
+      badge.className = "card__plus-badge";
+      badge.textContent = "+".repeat(card.level);
+      el.appendChild(badge);
+    }
+
     enableDrag(el, {
       payload: {
         cardId: card.id,
         cardType: card.type,
+        cardLevel: card.level || 0,
         specialKey: card.specialKey,
       },
       canDrop: (target, payload) =>

@@ -98,6 +98,18 @@
   border-width: 2px;
 }
 
+/* Badge de nível (quantidade de "+" empilhados após merges) */
+.card__plus-badge {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 10px;
+  color: var(--color-xp);
+  letter-spacing: 1px;
+  text-shadow: 0 0 6px rgba(201, 162, 39, 0.6);
+  pointer-events: none;
+}
+
 /* Drag-and-drop */
 
 .card.is-drag-source {

@@ -181,6 +181,41 @@ const sounds = {
     });
   },
 
+  cardMerge: () => {
+    sequence([
+      {
+        delay: 0,
+        fn: () =>
+          tone({
+            freq: 660,
+            type: "square",
+            duration: 0.06,
+            volume: 0.2,
+          }),
+      },
+      {
+        delay: 60,
+        fn: () =>
+          tone({
+            freq: 880,
+            type: "square",
+            duration: 0.08,
+            volume: 0.22,
+          }),
+      },
+      {
+        delay: 130,
+        fn: () =>
+          tone({
+            freq: 1175,
+            type: "square",
+            duration: 0.14,
+            volume: 0.26,
+          }),
+      },
+    ]);
+  },
+
   gameOver: () => {
     sequence([
       { delay: 0, fn: () => tone({ freq: 330, type: "sawtooth", duration: 0.18, volume: 0.3 }) },

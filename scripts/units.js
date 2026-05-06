@@ -3,19 +3,23 @@ import { state, nextId } from "./state.js";
 
 let heroCounter = 0;
 
-export function createPlayerUnit(x, y) {
+export function createPlayerUnit(x, y, level = 0) {
   heroCounter += 1;
+  // Multiplicador exponencial dos atributos base por nível da carta.
+  // Hero+ (level 1) = stats base × 2, Hero++ (level 2) = × 4, etc.
+  const mul = Math.pow(2, level);
   const unit = {
     id: nextId("nextUnitId"),
     kind: "ally",
     name: `Herói ${heroCounter}`,
+    cardLevel: level,
     x,
     y,
-    hp: PLAYER_UNIT.HP,
-    maxHp: PLAYER_UNIT.HP,
-    atk: PLAYER_UNIT.ATK,
-    atkSpeed: PLAYER_UNIT.ATK_SPEED,
-    moveSpeed: PLAYER_UNIT.MOVE_SPEED,
+    hp: PLAYER_UNIT.HP * mul,
+    maxHp: PLAYER_UNIT.HP * mul,
+    atk: PLAYER_UNIT.ATK * mul,
+    atkSpeed: PLAYER_UNIT.ATK_SPEED * mul,
+    moveSpeed: PLAYER_UNIT.MOVE_SPEED * mul,
     range: PLAYER_UNIT.RANGE,
     size: PLAYER_UNIT.SIZE,
     upgrades: { hp: 0, atk: 0, atkSpeed: 0, moveSpeed: 0 },
@@ -58,27 +62,31 @@ export function createEnemy(typeDef, x, y, wave) {
   return enemy;
 }
 
-export function applyUpgrade(unit, kind) {
+// Aplica um upgrade. `level` é o nível da carta usada (0 = normal,
+// 1 = "+", 2 = "++", etc.). Stats e contador escalam com 2^level — uma
+// carta de nível 2 vale 4 cartas comuns no contador e nos bônus.
+export function applyUpgrade(unit, kind, level = 0) {
+  const mul = Math.pow(2, level);
   switch (kind) {
     case "hp": {
-      unit.upgrades.hp += 1;
-      unit.maxHp += 25;
-      unit.hp += 25;
+      unit.upgrades.hp += mul;
+      unit.maxHp += 25 * mul;
+      unit.hp += 25 * mul;
       break;
     }
     case "atk": {
-      unit.upgrades.atk += 1;
-      unit.atk += 8;
+      unit.upgrades.atk += mul;
+      unit.atk += 8 * mul;
       break;
     }
     case "atk_speed": {
-      unit.upgrades.atkSpeed += 1;
-      unit.atkSpeed += 0.3;
+      unit.upgrades.atkSpeed += mul;
+      unit.atkSpeed += 0.3 * mul;
       break;
     }
     case "move_speed": {
-      unit.upgrades.moveSpeed += 1;
-      unit.moveSpeed += 20;
+      unit.upgrades.moveSpeed += mul;
+      unit.moveSpeed += 20 * mul;
       break;
     }
   }

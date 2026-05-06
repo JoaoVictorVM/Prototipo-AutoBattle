@@ -34,6 +34,7 @@ export function makeCard(type) {
   return {
     id: nextId("nextCardId"),
     type,
+    level: 0,
     title: info.title,
     typeLabel: info.typeLabel,
     desc: info.desc,
@@ -41,7 +42,8 @@ export function makeCard(type) {
 }
 
 // Sorteia uma habilidade aleatória do pool de SPECIALS e devolve uma
-// carta com type="special" + specialKey + cor.
+// carta com type="special" + specialKey + cor. Specials NÃO têm level
+// (não são mergeáveis).
 function makeSpecialCard() {
   const all = Object.values(SPECIALS);
   const special = all[Math.floor(Math.random() * all.length)];

@@ -41,6 +41,19 @@ function canCardDrop(payload, target) {
   const zone = target.dataset.dropZone;
   const cardType = payload.cardType;
 
+  // Drop em outra carta = merge (não vale pra specials).
+  if (zone === "card") {
+    if (cardType === CARD_TYPES.SPECIAL) return false;
+    const targetCardId = Number(target.dataset.cardId);
+    if (targetCardId === payload.cardId) return false; // não mergea consigo
+    const sourceCard = state.hand.find((c) => c.id === payload.cardId);
+    const targetCard = state.hand.find((c) => c.id === targetCardId);
+    if (!sourceCard || !targetCard) return false;
+    if (targetCard.type === CARD_TYPES.SPECIAL) return false;
+    if (sourceCard.type !== targetCard.type) return false;
+    return (sourceCard.level || 0) === (targetCard.level || 0);
+  }
+
   if (cardType === CARD_TYPES.CHARACTER) {
     return zone === "field";
   }
@@ -61,6 +74,13 @@ function canCardDrop(payload, target) {
 function onCardDrop({ zone, clientX, clientY, payload, target }) {
   const card = getCardById(payload.cardId);
   if (!card) return;
+
+  if (zone === "card") {
+    const targetCardId = Number(target.dataset.cardId);
+    const targetCard = state.hand.find((c) => c.id === targetCardId);
+    if (targetCard) mergeCards(card, targetCard);
+    return;
+  }
 
   if (card.type === CARD_TYPES.CHARACTER) {
     if (zone === "field") {
@@ -89,7 +109,7 @@ function spawnCharacterAtClient(card, clientX, clientY) {
     Math.min(state.field.height - margin, clientY - r.top),
   );
 
-  const unit = createPlayerUnit(x, y);
+  const unit = createPlayerUnit(x, y, card.level || 0);
   state.units.push(unit);
   removeCardFromHand(card.id);
   renderAll();
@@ -105,9 +125,29 @@ function applyUpgradeCard(card, unitId) {
     if (unit.specials.some((s) => s.key === special.key)) return;
     applySpecial(unit, special);
   } else {
-    applyUpgrade(unit, card.type);
+    applyUpgrade(unit, card.type, card.level || 0);
   }
   removeCardFromHand(card.id);
+  renderAll();
+}
+
+function mergeCards(sourceCard, targetCard) {
+  // Specials não mergeáveis (defensivo, canCardDrop já bloqueia).
+  if (
+    sourceCard.type === CARD_TYPES.SPECIAL ||
+    targetCard.type === CARD_TYPES.SPECIAL
+  ) {
+    return;
+  }
+  if (sourceCard.type !== targetCard.type) return;
+  const sLevel = sourceCard.level || 0;
+  const tLevel = targetCard.level || 0;
+  if (sLevel !== tLevel) return;
+  if (sourceCard.id === targetCard.id) return;
+
+  targetCard.level = tLevel + 1;
+  removeCardFromHand(sourceCard.id);
+  playSfx("cardMerge");
   renderAll();
 }
 
