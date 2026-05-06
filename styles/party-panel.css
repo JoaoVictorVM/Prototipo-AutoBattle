@@ -53,13 +53,64 @@
 
 .party-member__row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 10px;
   font-size: 12px;
+}
+
+.party-member__hp {
+  margin-left: auto;
 }
 
 .party-member__upgrades {
   font-size: 11px;
   color: var(--color-text-muted);
+}
+
+/* Pilha de mini-cartas mostrando os upgrades aplicados ao herói.
+   Aparece ao lado do nome do herói, antes do HP. */
+.party-member__cards {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.party-mini-card {
+  position: relative;
+  width: 28px;
+  height: 38px;
+  border-radius: 3px;
+  border: 2px dashed var(--color-border);
+  background: #1f1f1f;
+  flex-shrink: 0;
+}
+
+.party-mini-card--hp {
+  border-color: #3a6dbf;
+}
+.party-mini-card--atk {
+  border-color: #a83838;
+}
+.party-mini-card--atk_speed {
+  border-color: #c87a2a;
+}
+.party-mini-card--move_speed {
+  border-color: #1abc9c;
+}
+/* Specials usam border-color inline. */
+
+.party-mini-card__count {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 1px 3px;
+  font-size: 7px;
+  line-height: 1;
+  color: var(--color-text);
+  letter-spacing: 0;
 }
 

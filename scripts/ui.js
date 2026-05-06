@@ -1,6 +1,6 @@
 import { state } from "./state.js";
 import { PHASE } from "./constants.js";
-import { totalUpgrades, upgradeSummary } from "./units.js";
+import { totalUpgrades } from "./units.js";
 import {
   flashDamage,
   playAttackPunch,
@@ -238,6 +238,37 @@ function blendSpecialColors(specials) {
   )})`;
 }
 
+// Adiciona mini-cartas representando os upgrades aplicados ao herói:
+// uma por tipo de upgrade (com badge de quantidade) seguida de uma por
+// habilidade especial (sem badge — habilidades são únicas).
+function appendUnitMiniCards(container, unit) {
+  const order = [
+    { key: "hp", className: "party-mini-card--hp" },
+    { key: "atk", className: "party-mini-card--atk" },
+    { key: "atkSpeed", className: "party-mini-card--atk_speed" },
+    { key: "moveSpeed", className: "party-mini-card--move_speed" },
+  ];
+  for (const { key, className } of order) {
+    const count = unit.upgrades[key] || 0;
+    if (count <= 0) continue;
+    const el = document.createElement("div");
+    el.className = `party-mini-card ${className}`;
+    if (count > 1) {
+      const badge = document.createElement("div");
+      badge.className = "party-mini-card__count";
+      badge.textContent = `x${count}`;
+      el.appendChild(badge);
+    }
+    container.appendChild(el);
+  }
+  for (const special of unit.specials) {
+    const el = document.createElement("div");
+    el.className = "party-mini-card party-mini-card--special";
+    el.style.borderColor = special.color || "var(--color-ally)";
+    container.appendChild(el);
+  }
+}
+
 function hexToRgb(hex) {
   if (typeof hex !== "string") return null;
   const h = hex.replace("#", "");
@@ -260,12 +291,7 @@ export function renderXPBar() {
 
 export function renderParty() {
   dom.partyList.innerHTML = "";
-  if (state.units.length === 0) {
-    const empty = document.createElement("div");
-
-    dom.partyList.appendChild(empty);
-    return;
-  }
+  if (state.units.length === 0) return;
   for (const u of state.units) {
     const card = document.createElement("div");
     card.className = "party-member";
@@ -283,19 +309,23 @@ export function renderParty() {
 
     const row = document.createElement("div");
     row.className = "party-member__row";
+
     const name = document.createElement("span");
+    name.className = "party-member__name";
     name.textContent = u.name;
-    const hp = document.createElement("span");
-    hp.textContent = `HP ${Math.ceil(u.hp)}/${u.maxHp}`;
     row.appendChild(name);
+
+    const cards = document.createElement("div");
+    cards.className = "party-member__cards";
+    appendUnitMiniCards(cards, u);
+    row.appendChild(cards);
+
+    const hp = document.createElement("span");
+    hp.className = "party-member__hp";
+    hp.textContent = `HP ${Math.ceil(u.hp)}/${u.maxHp}`;
     row.appendChild(hp);
+
     info.appendChild(row);
-
-    const ups = document.createElement("div");
-    ups.className = "party-member__upgrades";
-    ups.textContent = upgradeSummary(u) || "—";
-    info.appendChild(ups);
-
     card.appendChild(info);
 
     card.dataset.unitId = String(u.id);
