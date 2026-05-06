@@ -1,5 +1,12 @@
-import { state, resetState } from "./state.js";
-import { CARD_TYPES, PHASE, GAME, LOOT, SPECIALS } from "./constants.js";
+import { state, resetState, nextId } from "./state.js";
+import {
+  CARD_TYPES,
+  PHASE,
+  GAME,
+  LOOT,
+  SPECIALS,
+  XP_ORB,
+} from "./constants.js";
 import { createPlayerUnit, applyUpgrade, applySpecial } from "./units.js";
 import {
   drawInitialHand,
@@ -10,12 +17,13 @@ import {
 import { spawnWave } from "./waves.js";
 import { combatTick } from "./combat.js";
 import { addPlayerXP, xpForKill, xpForWaveComplete } from "./xp.js";
-import { spawnFloatingText } from "./effects.js";
 import { play as playSfx, unlockOnFirstInteraction } from "./audio.js";
 import {
   initUI,
   renderAll,
   syncUnitsFrame,
+  syncOrbsFrame,
+  clearAllOrbs,
   processCombatEvents,
   renderHUD,
   renderParty,
@@ -25,7 +33,6 @@ import {
   renderGameOverModal,
   closeModal,
   clearGameDOM,
-  getEffectsLayer,
 } from "./ui.js";
 
 function canCardDrop(payload, target) {
@@ -121,9 +128,8 @@ function onStartBattle() {
 function handlePostTickEvents() {
   let scoreDelta = 0;
   let killDelta = 0;
-  let xpDelta = 0;
+  let spawned = false;
 
-  const layer = getEffectsLayer();
   for (const ev of state.pendingEvents) {
     if (ev.type !== "death") continue;
     const u = ev.unit;
@@ -131,12 +137,9 @@ function handlePostTickEvents() {
       scoreDelta += 10;
       killDelta += 1;
       const xp = xpForKill(state.wave);
-      xpDelta += xp;
-      if (layer) {
-        spawnFloatingText(layer, u.x, u.y - u.size / 2, `+${xp} XP`, "xp");
-      }
+      spawnOrbsFromKill(u, xp);
+      spawned = true;
       playSfx("enemyDeath");
-      playSfx("xpGain");
     }
   }
 
@@ -144,9 +147,106 @@ function handlePostTickEvents() {
     state.score += scoreDelta;
     state.enemiesKilled += killDelta;
   }
-  if (xpDelta > 0) {
-    awardPlayerXP(xpDelta);
+  if (spawned) playSfx("xpDrop");
+}
+
+function spawnOrbsFromKill(enemy, totalXp) {
+  const desired = Math.ceil(totalXp / XP_ORB.VALUE_PER_ORB);
+  const count = Math.min(XP_ORB.MAX_ORBS_PER_KILL, Math.max(1, desired));
+  const valuePerOrb = totalXp / count;
+  const speedRange =
+    XP_ORB.EXPLOSION_SPEED_MAX - XP_ORB.EXPLOSION_SPEED_MIN;
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed =
+      XP_ORB.EXPLOSION_SPEED_MIN + Math.random() * speedRange;
+    state.xpOrbs.push({
+      id: nextId("nextOrbId"),
+      x: enemy.x,
+      y: enemy.y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      value: valuePerOrb,
+      age: 0,
+      collected: false,
+    });
   }
+}
+
+function orbsTick(dt) {
+  if (state.xpOrbs.length === 0) return;
+  if (state.phase === PHASE.PAUSED_LEVEL_UP) return;
+  if (state.phase === PHASE.GAME_OVER) return;
+
+  const cursor = state.cursor;
+  const friction = Math.pow(XP_ORB.FRICTION_PER_SECOND, dt);
+  let collectedXp = 0;
+  let pickupCount = 0;
+  let anyChange = false;
+
+  for (const orb of state.xpOrbs) {
+    if (orb.collected) continue;
+
+    orb.vx *= friction;
+    orb.vy *= friction;
+
+    const dx = cursor.x - orb.x;
+    const dy = cursor.y - orb.y;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist < XP_ORB.MAGNET_RADIUS && dist > 0.001) {
+      const factor = 1 - dist / XP_ORB.MAGNET_RADIUS; // 0..1, mais perto = maior
+      const force =
+        XP_ORB.MAGNET_BASE_FORCE + factor * XP_ORB.MAGNET_FORCE_PEAK;
+      orb.vx += (dx / dist) * force * dt;
+      orb.vy += (dy / dist) * force * dt;
+
+      if (dist < XP_ORB.PICKUP_RADIUS) {
+        orb.collected = true;
+        collectedXp += orb.value;
+        pickupCount += 1;
+        anyChange = true;
+        continue;
+      }
+    }
+
+    orb.x += orb.vx * dt;
+    orb.y += orb.vy * dt;
+
+    const r = XP_ORB.SIZE / 2;
+    if (orb.x < r) {
+      orb.x = r;
+      orb.vx *= -0.4;
+    }
+    if (orb.x > state.field.width - r) {
+      orb.x = state.field.width - r;
+      orb.vx *= -0.4;
+    }
+    if (orb.y < r) {
+      orb.y = r;
+      orb.vy *= -0.4;
+    }
+    if (orb.y > state.field.height - r) {
+      orb.y = state.field.height - r;
+      orb.vy *= -0.4;
+    }
+
+    orb.age += dt;
+  }
+
+  if (anyChange) {
+    state.xpOrbs = state.xpOrbs.filter((o) => !o.collected);
+  }
+  if (collectedXp > 0) {
+    awardPlayerXP(collectedXp);
+  }
+  for (let i = 0; i < pickupCount; i++) {
+    playSfx("xpGain");
+  }
+}
+
+function expireAllOrbs() {
+  state.xpOrbs = [];
 }
 
 function awardPlayerXP(amount) {
@@ -321,8 +421,10 @@ function frame(now) {
       state.pendingLevelUps.push({ kind: "loot", reason: "wave" });
     }
 
+    orbsTick(dt);
     processCombatEvents();
     syncUnitsFrame();
+    syncOrbsFrame();
 
     renderHUD();
     renderParty();
@@ -332,12 +434,17 @@ function frame(now) {
     maybeShowGameOver();
   } else if (state.phase === PHASE.BETWEEN_WAVES) {
     state.pendingWaveTimer -= dt;
+    orbsTick(dt);
     processCombatEvents();
     syncUnitsFrame();
+    syncOrbsFrame();
     renderHUD();
     renderXPBar();
     if (state.pendingWaveTimer <= 0) {
       state.wave += 1;
+      // XP não coletada se perde ao iniciar a próxima wave.
+      expireAllOrbs();
+      clearAllOrbs();
       spawnWave(state.wave);
       state.phase = PHASE.BATTLE;
       playSfx("waveStart");
@@ -346,6 +453,7 @@ function frame(now) {
   } else if (state.phase === PHASE.PAUSED_LEVEL_UP) {
     processCombatEvents();
     syncUnitsFrame();
+    syncOrbsFrame();
   } else if (state.phase === PHASE.GAME_OVER) {
     maybeShowGameOver();
   }

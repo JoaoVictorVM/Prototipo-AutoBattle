@@ -63,6 +63,14 @@ export function initUI(callbacks) {
     state.field.height = r.height;
     layoutHand();
   });
+
+  // Tracking do cursor em coordenadas do battlefield, pra usar
+  // pelo magnet das XP orbs.
+  window.addEventListener("mousemove", (ev) => {
+    const r = dom.battlefield.getBoundingClientRect();
+    state.cursor.x = ev.clientX - r.left;
+    state.cursor.y = ev.clientY - r.top;
+  });
 }
 
 export function getEffectsLayer() {
@@ -110,6 +118,46 @@ export function renderStartButton() {
   dom.startBtn.style.display =
     state.phase === PHASE.SETUP ? "inline-block" : "none";
 }
+
+// Mantém um Map id→DOM das orbs para criar/atualizar/remover sem
+// reconstruir tudo a cada frame.
+const renderedOrbs = new Map();
+
+export function syncOrbsFrame() {
+  if (!dom.effectsLayer) return;
+  const present = new Set();
+
+  for (const orb of state.xpOrbs) {
+    present.add(orb.id);
+    let el = renderedOrbs.get(orb.id);
+    if (!el) {
+      el = document.createElement("div");
+      el.className = "xp-orb";
+      dom.effectsLayer.appendChild(el);
+      renderedOrbs.set(orb.id, el);
+    }
+    el.style.left = `${orb.x}px`;
+    el.style.top = `${orb.y}px`;
+  }
+
+  // Limpa orbs que saíram do estado (coletadas ou expiradas).
+  for (const [id, el] of renderedOrbs) {
+    if (!present.has(id)) {
+      el.classList.add("xp-orb--collected");
+      setTimeout(() => el.remove(), 220);
+      renderedOrbs.delete(id);
+    }
+  }
+}
+
+export function clearAllOrbs() {
+  for (const [, el] of renderedOrbs) {
+    el.classList.add("xp-orb--collected");
+    setTimeout(() => el.remove(), 220);
+  }
+  renderedOrbs.clear();
+}
+
 export function syncUnitsFrame() {
   for (const u of state.units) {
     if (!u.el) continue;
@@ -699,5 +747,6 @@ export function renderGameOverModal({ wave, kills, score }, onRestart) {
 export function clearGameDOM() {
   if (dom.unitsLayer) dom.unitsLayer.innerHTML = "";
   if (dom.effectsLayer) dom.effectsLayer.innerHTML = "";
+  renderedOrbs.clear();
   closeModal();
 }

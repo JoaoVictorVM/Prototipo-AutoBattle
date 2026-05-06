@@ -17,10 +17,14 @@ export const state = {
   units: [],
   enemies: [],
   hand: [],
+  xpOrbs: [],
+
+  cursor: { x: -9999, y: -9999 },
 
   nextUnitId: 1,
   nextEnemyId: 1,
   nextCardId: 1,
+  nextOrbId: 1,
 
   field: {
     width: 0,
@@ -51,9 +55,13 @@ export function resetState() {
   state.units = [];
   state.enemies = [];
   state.hand = [];
+  state.xpOrbs = [];
+  state.cursor.x = -9999;
+  state.cursor.y = -9999;
   state.nextUnitId = 1;
   state.nextEnemyId = 1;
   state.nextCardId = 1;
+  state.nextOrbId = 1;
   state.pendingWaveTimer = 0;
   state.pendingEvents = [];
   state.pendingLevelUps = [];

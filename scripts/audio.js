@@ -120,6 +120,27 @@ const sounds = {
       freqEnd: 1320,
     }),
 
+  xpDrop: () => {
+    tone({
+      freq: 1100,
+      type: "sine",
+      duration: 0.05,
+      volume: 0.1,
+      freqEnd: 1700,
+    });
+    setTimeout(
+      () =>
+        tone({
+          freq: 1400,
+          type: "sine",
+          duration: 0.05,
+          volume: 0.08,
+          freqEnd: 2100,
+        }),
+      30,
+    );
+  },
+
   levelUp: () => {
     sequence([
       { delay: 0, fn: () => tone({ freq: 523, type: "square", duration: 0.08, volume: 0.22 }) },

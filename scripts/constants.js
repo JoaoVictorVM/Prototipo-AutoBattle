@@ -117,6 +117,20 @@ export const LOOT = {
   MAX_REROLLS_PER_GAME: 3,
 };
 
+export const XP_ORB = {
+  VALUE_PER_ORB: 5,
+  MAX_ORBS_PER_KILL: 8,
+  EXPLOSION_SPEED_MIN: 80,
+  EXPLOSION_SPEED_MAX: 180,
+  // Fração da velocidade que sobra após 1 segundo de fricção.
+  FRICTION_PER_SECOND: 0.05,
+  MAGNET_RADIUS: 80,
+  MAGNET_BASE_FORCE: 600,
+  MAGNET_FORCE_PEAK: 1500,
+  PICKUP_RADIUS: 18,
+  SIZE: 10,
+};
+
 export const CARD_POOL = {
   CHARACTER: 0.23,
   HP: 0.18,

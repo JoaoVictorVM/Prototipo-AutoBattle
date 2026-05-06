@@ -67,6 +67,35 @@
   outline-offset: 2px;
 }
 
+/* XP orbs — círculo dourado pulsante. Posição via JS (left/top). */
+.xp-orb {
+  position: absolute;
+  width: var(--orb-size, 10px);
+  height: var(--orb-size, 10px);
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #ffe27a, #c9a227 70%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: xp-orb-glow 1.4s ease-in-out infinite;
+  transition: opacity 200ms ease-out, transform 200ms ease-out;
+  will-change: left, top;
+}
+
+@keyframes xp-orb-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 6px rgba(255, 226, 122, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 14px rgba(255, 226, 122, 0.95);
+  }
+}
+
+.xp-orb--collected {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(2);
+}
+
 /* Drag-and-drop: hover preciso sobre alvo válido (cursor em cima) */
 .is-drop-hover {
   outline: 2px solid var(--color-xp);
