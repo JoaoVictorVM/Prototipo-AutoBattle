@@ -58,13 +58,35 @@
   font-size: 28px;
 }
 
+.modal__footer {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
 .modal__btn {
   padding: 10px 24px;
   background: var(--color-ally);
   color: #0d0d0d;
   font-weight: 600;
   border-radius: 6px;
-  transition: transform var(--speed-fast);
+  transition: transform var(--speed-fast), opacity var(--speed-fast);
+}
+
+.modal__btn--secondary {
+  background: transparent;
+  border: 2px dashed var(--color-text-muted);
+  color: var(--color-text);
+}
+
+.modal__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.modal__btn:not(:disabled):hover {
+  transform: translateY(-2px);
 }
 
 .modal__btn:hover {

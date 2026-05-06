@@ -149,6 +149,17 @@ const sounds = {
       freqEnd: 90,
     }),
 
+  cardDiscard: () => {
+    noise({ duration: 0.16, volume: 0.16, cutoff: 1200 });
+    tone({
+      freq: 320,
+      type: "triangle",
+      duration: 0.1,
+      volume: 0.12,
+      freqEnd: 180,
+    });
+  },
+
   gameOver: () => {
     sequence([
       { delay: 0, fn: () => tone({ freq: 330, type: "sawtooth", duration: 0.18, volume: 0.3 }) },

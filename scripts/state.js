@@ -34,6 +34,8 @@ export const state = {
   pendingLevelUps: [],
   resumePhase: null,
 
+  rerollsLeft: 3,
+
   gameOverShown: false,
 };
 
@@ -56,6 +58,7 @@ export function resetState() {
   state.pendingEvents = [];
   state.pendingLevelUps = [];
   state.resumePhase = null;
+  state.rerollsLeft = 3;
   state.gameOverShown = false;
 }
 

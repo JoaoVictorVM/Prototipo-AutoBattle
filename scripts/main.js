@@ -1,5 +1,5 @@
 import { state, resetState } from "./state.js";
-import { CARD_TYPES, PHASE, GAME } from "./constants.js";
+import { CARD_TYPES, PHASE, GAME, LOOT } from "./constants.js";
 import { createPlayerUnit, applyUpgrade } from "./units.js";
 import {
   drawInitialHand,
@@ -20,7 +20,8 @@ import {
   renderHUD,
   renderParty,
   renderXPBar,
-  renderModal,
+  renderLootModal,
+  playLootFlyAnimation,
   renderGameOverModal,
   closeModal,
   clearGameDOM,
@@ -133,7 +134,7 @@ function handlePostTickEvents() {
 function awardPlayerXP(amount) {
   const levels = addPlayerXP(amount);
   for (let i = 0; i < levels; i++) {
-    state.pendingLevelUps.push({ kind: "player" });
+    state.pendingLevelUps.push({ kind: "loot", reason: "level" });
   }
   if (levels > 0) playSfx("levelUp");
 }
@@ -156,40 +157,134 @@ function showNextLevelUp() {
     renderAll();
     return;
   }
-  state.pendingLevelUps.shift();
-  showPlayerLevelUpModal();
+  const next = state.pendingLevelUps.shift();
+  showLootModal(next);
 }
 
-function safePickHandler(applyFn) {
-  let consumed = false;
-  return (option) => {
-    if (consumed) return;
-    consumed = true;
-    closeModal();
-    try {
-      applyFn(option);
-    } catch (err) {
-      console.error("[level-up] erro ao aplicar escolha:", err);
+function showLootModal(entry) {
+  let cards = rollLevelUpCards(LOOT.CARDS_PER_DROP);
+  let rerollTimer = null;
+
+  const title =
+    entry.reason === "wave"
+      ? `Wave ${state.wave} concluída!`
+      : `Nível ${state.player.level}!`;
+  const subtitle = `Você ganhou ${LOOT.CARDS_PER_DROP} cartas`;
+
+  // Atualiza só as cartas e o texto do botão de reroll, sem recriar
+  // o modal inteiro (evita re-disparar fade-in/scale-up).
+  const swapModalCards = () => {
+    const modalRoot = document.getElementById("modal-root");
+    const cardsWrap = modalRoot?.querySelector(
+      ".modal--loot .modal__cards",
+    );
+    if (!cardsWrap) {
+      // Modal não existe ainda — abre normal.
+      renderModalFresh();
+      return;
     }
-    try {
-      renderAll();
-    } catch (err) {
-      console.error("[level-up] erro ao re-renderizar:", err);
+    cardsWrap.innerHTML = "";
+    for (const card of cards) {
+      const el = document.createElement("div");
+      el.className = `card card--${card.type}`;
+      if (card.kind === "special" && card.special) {
+        el.classList.add("card--special");
+        el.style.borderColor = card.special.color;
+      }
+      const typeLabel = document.createElement("div");
+      typeLabel.className = "card__type";
+      typeLabel.textContent = card.typeLabel;
+      el.appendChild(typeLabel);
+      const titleEl = document.createElement("div");
+      titleEl.className = "card__title";
+      titleEl.textContent = card.title;
+      el.appendChild(titleEl);
+      cardsWrap.appendChild(el);
     }
-    showNextLevelUp();
+    const rerollBtn = modalRoot?.querySelector(".modal__btn--secondary");
+    if (rerollBtn) {
+      rerollBtn.textContent = `Rerolar (${state.rerollsLeft})`;
+      rerollBtn.disabled = state.rerollsLeft <= 0;
+    }
   };
-}
 
-function showPlayerLevelUpModal() {
-  const cards = rollLevelUpCards(3);
-  renderModal({
-    title: `Nível ${state.player.level}!`,
-    subtitle: "Escolha uma carta",
-    cards,
-    onPick: safePickHandler((card) => {
-      state.hand.push(card);
-    }),
-  });
+  const renderModalFresh = () => {
+    renderLootModal({
+      title,
+      subtitle,
+      cards,
+      rerollsLeft: state.rerollsLeft,
+      onAccept: (modalRects) => {
+        if (rerollTimer) {
+          clearTimeout(rerollTimer);
+          rerollTimer = null;
+        }
+        const collected = cards.slice();
+        closeModal();
+
+        // Já adiciona as cartas à mão marcadas como "chegando".
+        // O renderHand vai criá-las invisíveis no slot final.
+        for (const c of collected) {
+          c._pendingArrival = true;
+          state.hand.push(c);
+        }
+        renderAll();
+
+        // Captura posição final exata de cada carta nova na mão.
+        const handEl = document.getElementById("hand-list");
+        const targetInfos = collected.map((c) => {
+          const el = handEl?.querySelector(
+            `[data-card-id="${c.id}"]`,
+          );
+          if (!el) return null;
+          return {
+            rect: el.getBoundingClientRect(),
+            rot:
+              parseFloat(el.style.getPropertyValue("--curve-rot")) || 0,
+          };
+        });
+
+        playLootFlyAnimation(collected, modalRects, targetInfos, () => {
+          // Revela as cartas reais no slot final, sem re-renderizar.
+          for (const c of collected) {
+            c._pendingArrival = false;
+            const el = handEl?.querySelector(
+              `[data-card-id="${c.id}"]`,
+            );
+            if (el) el.classList.remove("is-arriving");
+          }
+          showNextLevelUp();
+        });
+      },
+      onReroll: () => {
+        if (state.rerollsLeft <= 0 || rerollTimer) return;
+        state.rerollsLeft -= 1;
+        playSfx("cardDiscard");
+
+        // Fade rápido das cartas atuais antes de re-renderizar o modal.
+        const modalRoot = document.getElementById("modal-root");
+        const oldCards = modalRoot?.querySelectorAll(
+          ".modal--loot .modal__cards .card",
+        );
+        if (oldCards) {
+          oldCards.forEach((el) => {
+            el.style.transition =
+              "opacity 180ms ease-out, transform 180ms ease-out";
+            el.style.opacity = "0";
+            el.style.transform = "scale(0.85) translateY(8px) rotate(-3deg)";
+          });
+        }
+
+        rerollTimer = setTimeout(() => {
+          rerollTimer = null;
+          cards = rollLevelUpCards(LOOT.CARDS_PER_DROP);
+          swapModalCards();
+        }, 180);
+      },
+    });
+  };
+
+  renderModalFresh();
 }
 
 let lastFrame = performance.now();
@@ -205,6 +300,8 @@ function frame(now) {
 
     if (prevPhase === PHASE.BATTLE && state.phase === PHASE.BETWEEN_WAVES) {
       awardPlayerXP(xpForWaveComplete(state.wave));
+      // Loot de wave: 3 cartas garantidas além do XP.
+      state.pendingLevelUps.push({ kind: "loot", reason: "wave" });
     }
 
     processCombatEvents();

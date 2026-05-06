@@ -112,6 +112,11 @@ export const AUDIO = {
   HIT_THROTTLE_MS: 35, // limita rajadas de hits muito próximas
 };
 
+export const LOOT = {
+  CARDS_PER_DROP: 3,
+  MAX_REROLLS_PER_GAME: 3,
+};
+
 export const CARD_POOL = {
   CHARACTER: 0.25,
   HP: 0.2,

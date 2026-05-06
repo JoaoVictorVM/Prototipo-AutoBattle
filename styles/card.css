@@ -105,6 +105,13 @@
   pointer-events: none;
 }
 
+/* Carta acabou de ser adicionada à mão e está sendo "preenchida" pelo
+   clone que voa do modal de loot. Fica invisível até o clone chegar. */
+.card.is-arriving {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .card--ghost {
   pointer-events: none;
   z-index: 200;

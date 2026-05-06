@@ -341,6 +341,7 @@ export function renderHand() {
   for (const card of state.hand) {
     const el = document.createElement("div");
     el.className = `card card--${card.type}`;
+    if (card._pendingArrival) el.classList.add("is-arriving");
     el.dataset.cardId = String(card.id);
 
     const typeLabel = document.createElement("div");
@@ -488,6 +489,160 @@ export function renderModal({ title, subtitle, cards, onPick, footer }) {
 
 export function closeModal() {
   dom.modalRoot.innerHTML = "";
+}
+
+// Modal de "loot" — exibe N cartas que o jogador acabou de ganhar.
+// Não tem escolha: ele clica em "Aceitar" pra adicionar todas à mão.
+// Tem botão "Rerolar" que sorteia novamente, limitado a state.rerollsLeft.
+export function renderLootModal({
+  title,
+  subtitle,
+  cards,
+  rerollsLeft,
+  onAccept,
+  onReroll,
+}) {
+  dom.modalRoot.innerHTML = "";
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+
+  const modal = document.createElement("div");
+  modal.className = "modal modal--loot";
+
+  const t = document.createElement("h2");
+  t.className = "modal__title";
+  t.textContent = title;
+  modal.appendChild(t);
+
+  if (subtitle) {
+    const s = document.createElement("div");
+    s.className = "modal__subtitle";
+    s.textContent = subtitle;
+    modal.appendChild(s);
+  }
+
+  const cardsWrap = document.createElement("div");
+  cardsWrap.className = "modal__cards";
+  cardsWrap.dataset.lootCards = "true";
+  cards.forEach((card) => {
+    const el = document.createElement("div");
+    el.className = `card card--${card.type}`;
+    if (card.kind === "special" && card.special) {
+      el.classList.add("card--special");
+      el.style.borderColor = card.special.color;
+    }
+
+    const typeLabel = document.createElement("div");
+    typeLabel.className = "card__type";
+    typeLabel.textContent = card.typeLabel;
+    el.appendChild(typeLabel);
+
+    const titleEl = document.createElement("div");
+    titleEl.className = "card__title";
+    titleEl.textContent = card.title;
+    el.appendChild(titleEl);
+
+    cardsWrap.appendChild(el);
+  });
+  modal.appendChild(cardsWrap);
+
+  const footer = document.createElement("div");
+  footer.className = "modal__footer";
+
+  const rerollBtn = document.createElement("button");
+  rerollBtn.className = "modal__btn modal__btn--secondary";
+  rerollBtn.textContent = `Rerolar (${rerollsLeft})`;
+  rerollBtn.disabled = rerollsLeft <= 0;
+  rerollBtn.addEventListener("click", () => onReroll?.());
+  footer.appendChild(rerollBtn);
+
+  const acceptBtn = document.createElement("button");
+  acceptBtn.className = "modal__btn";
+  acceptBtn.textContent = "Aceitar";
+  acceptBtn.addEventListener("click", () => {
+    // captura rects antes de remover o modal
+    const cardEls = Array.from(cardsWrap.children);
+    const rects = cardEls.map((el) => el.getBoundingClientRect());
+    onAccept?.(rects);
+  });
+  footer.appendChild(acceptBtn);
+
+  modal.appendChild(footer);
+  overlay.appendChild(modal);
+  dom.modalRoot.appendChild(overlay);
+}
+
+// Anima clones das cartas voando do modal até a posição exata em que
+// vão ficar na mão (passada via targetInfos: { rect, rot } por carta).
+// Quando o clone chega, ele é removido e a carta real (que estava
+// invisível com .is-arriving) é revelada pelo onComplete.
+export function playLootFlyAnimation(cards, fromRects, targetInfos, onComplete) {
+  if (!fromRects || fromRects.length === 0) {
+    onComplete?.();
+    return;
+  }
+
+  const FLY_MS = 280;
+  const STAGGER_MS = 30;
+
+  const clones = cards.map((card, i) => {
+    const r = fromRects[i];
+    const clone = document.createElement("div");
+    clone.className = `card card--${card.type}`;
+    if (card.kind === "special" && card.special) {
+      clone.classList.add("card--special");
+      clone.style.borderColor = card.special.color;
+    }
+    clone.style.position = "fixed";
+    clone.style.left = `${r.left}px`;
+    clone.style.top = `${r.top}px`;
+    clone.style.width = `${r.width}px`;
+    clone.style.height = `${r.height}px`;
+    clone.style.margin = "0";
+    clone.style.transition = `left ${FLY_MS}ms ease-out, top ${FLY_MS}ms ease-out, transform ${FLY_MS}ms ease-out`;
+    clone.style.zIndex = "300";
+    clone.style.transformOrigin = "50% 50%";
+    clone.style.boxShadow = "0 10px 24px rgba(0, 0, 0, 0.55)";
+
+    const typeLabel = document.createElement("div");
+    typeLabel.className = "card__type";
+    typeLabel.textContent = card.typeLabel;
+    clone.appendChild(typeLabel);
+
+    const titleEl = document.createElement("div");
+    titleEl.className = "card__title";
+    titleEl.textContent = card.title;
+    clone.appendChild(titleEl);
+
+    document.body.appendChild(clone);
+    return clone;
+  });
+
+  requestAnimationFrame(() => {
+    clones.forEach((clone, i) => {
+      const target = targetInfos?.[i];
+      const delay = i * STAGGER_MS;
+      setTimeout(() => {
+        if (!target) {
+          // Sem destino conhecido — encolhe e some.
+          clone.style.transform = "scale(0.3)";
+          clone.style.opacity = "0";
+          return;
+        }
+        const cx = target.rect.left + target.rect.width / 2;
+        const cy = target.rect.top + target.rect.height / 2;
+        clone.style.left = `${cx - clone.offsetWidth / 2}px`;
+        clone.style.top = `${cy - clone.offsetHeight / 2}px`;
+        clone.style.transform = `rotate(${target.rot}deg)`;
+      }, delay);
+    });
+  });
+
+  const totalMs = FLY_MS + (cards.length - 1) * STAGGER_MS + 20;
+  setTimeout(() => {
+    clones.forEach((c) => c.remove());
+    onComplete?.();
+  }, totalMs);
 }
 
 export function renderGameOverModal({ wave, kills, score }, onRestart) {
