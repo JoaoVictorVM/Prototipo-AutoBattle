@@ -8,16 +8,46 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  cursor: pointer;
-  transition:
-    transform var(--speed-normal),
-    box-shadow var(--speed-normal);
+  cursor: grab;
   user-select: none;
   position: relative;
 }
 
-.card:hover {
-  transform: translateY(-12px);
+/* Cartas dentro da mão são posicionadas absolutamente e o transform
+   final vem das variáveis --curve-x / --curve-rot calculadas pelo
+   ui.js layoutHand. */
+.hand__list .card {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform-origin: 50% 100%;
+  transform: translateX(calc(-50% + var(--curve-x, 0px)))
+    rotate(var(--curve-rot, 0deg));
+  transition:
+    transform var(--speed-normal) ease-out,
+    box-shadow var(--speed-normal) ease-out;
+  pointer-events: auto;
+}
+
+/* Hover: carta sobe, fica reta e cresce um pouco. Sobre todas pelas
+   vizinhas via z-index alto. */
+.hand__list .card:hover {
+  transform: translateX(calc(-50% + var(--curve-x, 0px)))
+    translateY(-40px) rotate(0deg) scale(1.1);
+  z-index: 100;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.55);
+}
+
+/* Vizinhas se afastam pra dar espaço pra carta hovered.
+   :has é suportado em browsers modernos. */
+.hand__list .card:has(~ .card:hover) {
+  transform: translateX(calc(-50% + var(--curve-x, 0px) - 30px))
+    rotate(var(--curve-rot, 0deg));
+}
+
+.hand__list .card:hover ~ .card {
+  transform: translateX(calc(-50% + var(--curve-x, 0px) + 30px))
+    rotate(var(--curve-rot, 0deg));
 }
 
 .card--selected {
@@ -71,7 +101,7 @@
 /* Drag-and-drop */
 
 .card.is-drag-source {
-  opacity: 0.3;
+  visibility: hidden;
   pointer-events: none;
 }
 
@@ -81,10 +111,6 @@
   transform: scale(1.08);
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.6);
   cursor: grabbing;
-}
-
-.card {
-  cursor: grab;
 }
 
 .card:active {

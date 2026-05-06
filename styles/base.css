@@ -19,8 +19,8 @@
   /* Tamanhos */
   --unit-size: 24px;
   --slot-size: 48px;
-  --card-width: 120px;
-  --card-height: 170px;
+  --card-width: 135px;
+  --card-height: 185px;
 
   /* Velocidades de transição */
   --speed-fast: 150ms;

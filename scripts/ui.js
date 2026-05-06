@@ -61,6 +61,7 @@ export function initUI(callbacks) {
     const r = dom.battlefield.getBoundingClientRect();
     state.field.width = r.width;
     state.field.height = r.height;
+    layoutHand();
   });
 }
 
@@ -313,12 +314,8 @@ export function renderParty() {
 
 export function renderHand() {
   dom.handList.innerHTML = "";
-  if (state.hand.length === 0) {
-    const empty = document.createElement("div");
+  if (state.hand.length === 0) return;
 
-    dom.handList.appendChild(empty);
-    return;
-  }
   for (const card of state.hand) {
     const el = document.createElement("div");
     el.className = `card card--${card.type}`;
@@ -343,16 +340,70 @@ export function renderHand() {
       payload: { cardId: card.id, cardType: card.type },
       canDrop: (target, payload) =>
         handlers.canCardDrop?.(payload, target) ?? false,
-      onDragStart: () => playSfx("cardPickup"),
+      onDragStart: () => {
+        playSfx("cardPickup");
+        // Re-layout pra mão "fechar o buraco" da carta sendo arrastada.
+        requestAnimationFrame(layoutHand);
+      },
       onDrop: (info) => {
         playSfx("cardDropValid");
         handlers.onCardDrop?.(info);
       },
-      onCancel: () => playSfx("cardDropInvalid"),
+      onCancel: () => {
+        playSfx("cardDropInvalid");
+        // Drag cancelado — re-layout normal (a carta voltou).
+        requestAnimationFrame(layoutHand);
+      },
+      onDragEnd: () => requestAnimationFrame(layoutHand),
     });
 
     dom.handList.appendChild(el);
   }
+
+  layoutHand();
+}
+
+// Calcula posição (--curve-x em px) e rotação (--curve-rot em deg) de
+// cada carta na mão para formar um leque simétrico. Cartas com classe
+// is-drag-source são ignoradas no cálculo (mão "fecha o buraco").
+function layoutHand() {
+  if (!dom.handList) return;
+  const cards = Array.from(dom.handList.children);
+  const visible = cards.filter((c) => !c.classList.contains("is-drag-source"));
+  const N = visible.length;
+  if (N === 0) return;
+
+  // Largura do leque: 70% da viewport, capada em 1000px.
+  const handAreaWidth = Math.min(1000, window.innerWidth * 0.7);
+  const cardWidth =
+    parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--card-width")) ||
+    135;
+
+  const maxStep = cardWidth * 0.55; // sobreposição leve quando há poucas cartas
+  const minStep = 22; // sobreposição agressiva quando há muitas
+  let step;
+  if (N === 1) {
+    step = 0;
+  } else {
+    step = Math.min(maxStep, Math.max(minStep, (handAreaWidth - cardWidth) / (N - 1)));
+  }
+
+  const totalWidth = step * (N - 1);
+  const startX = -totalWidth / 2;
+
+  const center = (N - 1) / 2;
+  // Rotação máxima das cartas das pontas em graus.
+  const maxRot = N > 1 ? Math.min(10, 2.5 + N * 0.4) : 0;
+
+  visible.forEach((cardEl, i) => {
+    const x = startX + i * step;
+    const t = N > 1 ? (i - center) / center : 0; // -1..1
+    const rot = t * maxRot;
+
+    cardEl.style.setProperty("--curve-x", `${x}px`);
+    cardEl.style.setProperty("--curve-rot", `${rot}deg`);
+    cardEl.style.zIndex = String(i + 1);
+  });
 }
 
 export function renderModal({ title, subtitle, cards, onPick, footer }) {
