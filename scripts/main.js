@@ -1,18 +1,16 @@
 import { state, resetState } from "./state.js";
-import { CARD_TYPES, PHASE, GAME, UNIT_XP } from "./constants.js";
-import { createPlayerUnit, applyUpgrade, applySpecial } from "./units.js";
+import { CARD_TYPES, PHASE, GAME } from "./constants.js";
+import { createPlayerUnit, applyUpgrade } from "./units.js";
 import {
   drawInitialHand,
   getCardById,
   removeCardFromHand,
   rollLevelUpCards,
-  rollUnitLevelUpOptions,
 } from "./cards.js";
 import { spawnWave } from "./waves.js";
 import { combatTick } from "./combat.js";
 import { addPlayerXP, xpForKill, xpForWaveComplete } from "./xp.js";
-import { addUnitXP } from "./unit-xp.js";
-import { spawnLevelUpText, spawnFloatingText } from "./effects.js";
+import { spawnFloatingText } from "./effects.js";
 import { play as playSfx, unlockOnFirstInteraction } from "./audio.js";
 import {
   initUI,
@@ -140,20 +138,6 @@ function awardPlayerXP(amount) {
   if (levels > 0) playSfx("levelUp");
 }
 
-function checkUnitLevelUps() {
-  let totalLevels = 0;
-  for (const u of state.units) {
-    const levels = addUnitXP(u, 0);
-    for (let i = 0; i < levels; i++) {
-      state.pendingLevelUps.push({ kind: "unit", unitId: u.id });
-      const layer = getEffectsLayer();
-      if (layer) spawnLevelUpText(layer, u.x, u.y - u.size);
-    }
-    totalLevels += levels;
-  }
-  if (totalLevels > 0) playSfx("levelUp");
-  void UNIT_XP;
-}
 
 function maybeStartLevelUpFlow() {
   if (state.pendingLevelUps.length === 0) return;
@@ -172,12 +156,8 @@ function showNextLevelUp() {
     renderAll();
     return;
   }
-  const next = state.pendingLevelUps.shift();
-  if (next.kind === "player") {
-    showPlayerLevelUpModal();
-  } else {
-    showUnitLevelUpModal(next.unitId);
-  }
+  state.pendingLevelUps.shift();
+  showPlayerLevelUpModal();
 }
 
 function safePickHandler(applyFn) {
@@ -212,31 +192,6 @@ function showPlayerLevelUpModal() {
   });
 }
 
-function showUnitLevelUpModal(unitId) {
-  const unit = state.units.find((u) => u.id === unitId);
-  if (!unit) {
-    showNextLevelUp();
-    return;
-  }
-  const options = rollUnitLevelUpOptions(unit, 3);
-  renderModal({
-    title: `${unit.name} — Lv.${unit.level}`,
-    subtitle: "Escolha um upgrade",
-    cards: options,
-    onPick: safePickHandler((option) => {
-      applyUnitLevelUpOption(unit, option);
-    }),
-  });
-}
-
-function applyUnitLevelUpOption(unit, option) {
-  if (option.kind === "special") {
-    applySpecial(unit, option.special);
-  } else {
-    applyUpgrade(unit, option.type);
-  }
-}
-
 let lastFrame = performance.now();
 
 function frame(now) {
@@ -247,7 +202,6 @@ function frame(now) {
     const prevPhase = state.phase;
     combatTick(dt);
     handlePostTickEvents();
-    checkUnitLevelUps();
 
     if (prevPhase === PHASE.BATTLE && state.phase === PHASE.BETWEEN_WAVES) {
       awardPlayerXP(xpForWaveComplete(state.wave));

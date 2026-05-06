@@ -1,3 +1,20 @@
+.player-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.player-progress__level {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--color-xp);
+  text-transform: uppercase;
+}
+
+.player-progress__level span {
+  color: var(--color-text);
+}
+
 .xp-bar {
   position: relative;
   width: 100%;

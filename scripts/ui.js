@@ -284,7 +284,7 @@ export function renderParty() {
     const row = document.createElement("div");
     row.className = "party-member__row";
     const name = document.createElement("span");
-    name.textContent = `${u.name}  Lv.${u.level}`;
+    name.textContent = u.name;
     const hp = document.createElement("span");
     hp.textContent = `HP ${Math.ceil(u.hp)}/${u.maxHp}`;
     row.appendChild(name);
@@ -295,14 +295,6 @@ export function renderParty() {
     ups.className = "party-member__upgrades";
     ups.textContent = upgradeSummary(u) || "—";
     info.appendChild(ups);
-
-    const xp = document.createElement("div");
-    xp.className = "party-member__xp";
-    const xpFill = document.createElement("div");
-    xpFill.className = "party-member__xp-fill";
-    xpFill.style.width = `${(u.xp / u.xpNeeded) * 100}%`;
-    xp.appendChild(xpFill);
-    info.appendChild(xp);
 
     card.appendChild(info);
 

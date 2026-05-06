@@ -1,11 +1,4 @@
-import {
-  CARD_POOL,
-  CARD_TYPES,
-  CARD_INFO,
-  GAME,
-  SPECIALS,
-  UNIT_XP,
-} from "./constants.js";
+import { CARD_POOL, CARD_TYPES, CARD_INFO, GAME } from "./constants.js";
 import { state, nextId } from "./state.js";
 
 const POOL_ORDER = [
@@ -61,63 +54,5 @@ export function getCardById(cardId) {
 export function rollLevelUpCards(count = 3) {
   const result = [];
   for (let i = 0; i < count; i++) result.push(makeCard(pickCardType()));
-  return result;
-}
-
-const UNIT_UPGRADE_TYPES = [
-  CARD_TYPES.HP,
-  CARD_TYPES.ATK,
-  CARD_TYPES.ATK_SPEED,
-  CARD_TYPES.MOVE_SPEED,
-];
-
-function makeUpgradeOption(type) {
-  const info = CARD_INFO[type];
-  return {
-    id: nextId("nextCardId"),
-    kind: "upgrade",
-    type,
-    title: info.title,
-    typeLabel: "Upgrade",
-    desc: info.desc,
-  };
-}
-
-function makeSpecialOption(special) {
-  return {
-    id: nextId("nextCardId"),
-    kind: "special",
-    type: "special",
-    special,
-    title: special.name,
-    typeLabel: "Habilidade",
-    desc: special.desc,
-  };
-}
-
-export function rollUnitLevelUpOptions(unit, count = 3) {
-  const available = Object.values(SPECIALS).filter(
-    (s) => !unit.specials.find((x) => x.key === s.key),
-  );
-  let specialUsed = false;
-  const result = [];
-  for (let i = 0; i < count; i++) {
-    const rollSpecial =
-      !specialUsed &&
-      available.length > 0 &&
-      Math.random() < UNIT_XP.SPECIAL_CHANCE;
-    if (rollSpecial) {
-      const idx = Math.floor(Math.random() * available.length);
-      const [special] = available.splice(idx, 1);
-      result.push(makeSpecialOption(special));
-      specialUsed = true;
-    } else {
-      const t =
-        UNIT_UPGRADE_TYPES[
-          Math.floor(Math.random() * UNIT_UPGRADE_TYPES.length)
-        ];
-      result.push(makeUpgradeOption(t));
-    }
-  }
   return result;
 }

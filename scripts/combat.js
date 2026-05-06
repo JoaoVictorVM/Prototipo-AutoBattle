@@ -169,16 +169,11 @@ function doAttack(attacker, target, isFollowUp = false) {
   const damage = attacker.atk;
   applyDamage(attacker, target, damage);
 
-  if (attacker.kind === "ally") {
-    attacker.xp += damage;
-  }
-
   if (attacker.kind === "ally" && hasSpecial(attacker, SPECIALS.SPLASH.key)) {
     for (const e of state.enemies) {
       if (e === target || e.isDead) continue;
       if (Math.hypot(e.x - target.x, e.y - target.y) <= EFFECTS.SPLASH_RADIUS) {
         applyDamage(attacker, e, damage);
-        attacker.xp += damage;
       }
     }
   }
