@@ -1,6 +1,6 @@
 import { state, resetState } from "./state.js";
-import { CARD_TYPES, PHASE, GAME, LOOT } from "./constants.js";
-import { createPlayerUnit, applyUpgrade } from "./units.js";
+import { CARD_TYPES, PHASE, GAME, LOOT, SPECIALS } from "./constants.js";
+import { createPlayerUnit, applyUpgrade, applySpecial } from "./units.js";
 import {
   drawInitialHand,
   getCardById,
@@ -40,7 +40,13 @@ function canCardDrop(payload, target) {
 
   if (zone === "unit") {
     const unitId = Number(target.dataset.unitId);
-    return state.units.some((u) => u.id === unitId);
+    const unit = state.units.find((u) => u.id === unitId);
+    if (!unit) return false;
+    // Special: bloqueia se o herói já tem essa habilidade.
+    if (cardType === CARD_TYPES.SPECIAL) {
+      return !unit.specials.some((s) => s.key === payload.specialKey);
+    }
+    return true;
   }
   return false;
 }
@@ -85,9 +91,21 @@ function spawnCharacterAtClient(card, clientX, clientY) {
 function applyUpgradeCard(card, unitId) {
   const unit = state.units.find((u) => u.id === unitId);
   if (!unit) return;
-  applyUpgrade(unit, card.type);
+
+  if (card.type === CARD_TYPES.SPECIAL) {
+    const special = getSpecialByKey(card.specialKey);
+    if (!special) return;
+    if (unit.specials.some((s) => s.key === special.key)) return;
+    applySpecial(unit, special);
+  } else {
+    applyUpgrade(unit, card.type);
+  }
   removeCardFromHand(card.id);
   renderAll();
+}
+
+function getSpecialByKey(key) {
+  return Object.values(SPECIALS).find((s) => s.key === key) || null;
 }
 
 function onStartBattle() {
@@ -187,9 +205,8 @@ function showLootModal(entry) {
     for (const card of cards) {
       const el = document.createElement("div");
       el.className = `card card--${card.type}`;
-      if (card.kind === "special" && card.special) {
-        el.classList.add("card--special");
-        el.style.borderColor = card.special.color;
+      if (card.type === CARD_TYPES.SPECIAL && card.color) {
+        el.style.borderColor = card.color;
       }
       const typeLabel = document.createElement("div");
       typeLabel.className = "card__type";

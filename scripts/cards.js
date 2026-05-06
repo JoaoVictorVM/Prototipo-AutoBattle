@@ -1,4 +1,10 @@
-import { CARD_POOL, CARD_TYPES, CARD_INFO, GAME } from "./constants.js";
+import {
+  CARD_POOL,
+  CARD_TYPES,
+  CARD_INFO,
+  GAME,
+  SPECIALS,
+} from "./constants.js";
 import { state, nextId } from "./state.js";
 
 const POOL_ORDER = [
@@ -7,6 +13,7 @@ const POOL_ORDER = [
   { type: CARD_TYPES.ATK, weight: CARD_POOL.ATK },
   { type: CARD_TYPES.ATK_SPEED, weight: CARD_POOL.ATK_SPEED },
   { type: CARD_TYPES.MOVE_SPEED, weight: CARD_POOL.MOVE_SPEED },
+  { type: CARD_TYPES.SPECIAL, weight: CARD_POOL.SPECIAL },
 ];
 
 function pickCardType() {
@@ -20,6 +27,9 @@ function pickCardType() {
 }
 
 export function makeCard(type) {
+  if (type === CARD_TYPES.SPECIAL) {
+    return makeSpecialCard();
+  }
   const info = CARD_INFO[type];
   return {
     id: nextId("nextCardId"),
@@ -27,6 +37,21 @@ export function makeCard(type) {
     title: info.title,
     typeLabel: info.typeLabel,
     desc: info.desc,
+  };
+}
+
+// Sorteia uma habilidade aleatória do pool de SPECIALS e devolve uma
+// carta com type="special" + specialKey + cor.
+function makeSpecialCard() {
+  const all = Object.values(SPECIALS);
+  const special = all[Math.floor(Math.random() * all.length)];
+  return {
+    id: nextId("nextCardId"),
+    type: CARD_TYPES.SPECIAL,
+    specialKey: special.key,
+    color: special.color,
+    title: special.name,
+    typeLabel: "Habilidade",
   };
 }
 

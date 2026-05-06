@@ -342,6 +342,9 @@ export function renderHand() {
     const el = document.createElement("div");
     el.className = `card card--${card.type}`;
     if (card._pendingArrival) el.classList.add("is-arriving");
+    if (card.type === "special" && card.color) {
+      el.style.borderColor = card.color;
+    }
     el.dataset.cardId = String(card.id);
 
     const typeLabel = document.createElement("div");
@@ -360,7 +363,11 @@ export function renderHand() {
     el.appendChild(desc);
 
     enableDrag(el, {
-      payload: { cardId: card.id, cardType: card.type },
+      payload: {
+        cardId: card.id,
+        cardType: card.type,
+        specialKey: card.specialKey,
+      },
       canDrop: (target, payload) =>
         handlers.canCardDrop?.(payload, target) ?? false,
       onDragStart: () => {
@@ -527,9 +534,8 @@ export function renderLootModal({
   cards.forEach((card) => {
     const el = document.createElement("div");
     el.className = `card card--${card.type}`;
-    if (card.kind === "special" && card.special) {
-      el.classList.add("card--special");
-      el.style.borderColor = card.special.color;
+    if (card.type === "special" && card.color) {
+      el.style.borderColor = card.color;
     }
 
     const typeLabel = document.createElement("div");
@@ -589,9 +595,8 @@ export function playLootFlyAnimation(cards, fromRects, targetInfos, onComplete) 
     const r = fromRects[i];
     const clone = document.createElement("div");
     clone.className = `card card--${card.type}`;
-    if (card.kind === "special" && card.special) {
-      clone.classList.add("card--special");
-      clone.style.borderColor = card.special.color;
+    if (card.type === "special" && card.color) {
+      clone.style.borderColor = card.color;
     }
     clone.style.position = "fixed";
     clone.style.left = `${r.left}px`;

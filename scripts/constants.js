@@ -118,11 +118,12 @@ export const LOOT = {
 };
 
 export const CARD_POOL = {
-  CHARACTER: 0.25,
-  HP: 0.2,
-  ATK: 0.2,
-  ATK_SPEED: 0.18,
-  MOVE_SPEED: 0.17,
+  CHARACTER: 0.23,
+  HP: 0.18,
+  ATK: 0.18,
+  ATK_SPEED: 0.17,
+  MOVE_SPEED: 0.16,
+  SPECIAL: 0.08,
 };
 
 export const CARD_TYPES = {
@@ -131,6 +132,7 @@ export const CARD_TYPES = {
   ATK: "atk",
   ATK_SPEED: "atk_speed",
   MOVE_SPEED: "move_speed",
+  SPECIAL: "special",
 };
 
 export const CARD_INFO = {
